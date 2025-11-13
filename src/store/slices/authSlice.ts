@@ -44,10 +44,7 @@ export const register = createAsyncThunk(
       const response = await axiosInstance.post<
         ApiResponse<{ user: User; token: string }>
       >(AUTH_ENDPOINTS.REGISTER, payload);
-      const { user, token } = response.data.data!;
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-      return { user, token };
+      return response;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Registration failed"
@@ -118,8 +115,6 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;

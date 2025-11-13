@@ -36,6 +36,10 @@ import {
   clearError,
   updateCategory,
 } from "../store/slices/categorySlice";
+import { Add as AddIcon } from "@mui/icons-material";
+import { toast } from "react-toastify";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 const Categories: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -44,8 +48,43 @@ const Categories: React.FC = () => {
   );
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
-  const [name, setName] = useState("");
   const [editingCategory, setEditingCategory] = useState<any>(null);
+
+  const categoryValidationSchema = Yup.object({
+    name: Yup.string()
+      .trim()
+      .min(3, "Category name must be at least 3 characters")
+      .required("Category name is required"),
+  });
+
+  const formik = useFormik({
+    initialValues: {
+      name: "",
+    },
+    validationSchema: categoryValidationSchema,
+    onSubmit: async (values) => {
+      if (modalMode === "add") {
+        const result = await dispatch(
+          createCategory({ name: values.name.trim() })
+        );
+        if (createCategory.fulfilled.match(result)) {
+          toast.success("Category Added successfully!");
+          handleCloseModal();
+        }
+      } else if (modalMode === "edit" && editingCategory) {
+        const result = await dispatch(
+          updateCategory({
+            id: editingCategory._id,
+            name: values.name.trim(),
+          })
+        );
+        if (updateCategory.fulfilled.match(result)) {
+          toast.success("Category Updated successfully!");
+          handleCloseModal();
+        }
+      }
+    },
+  });
 
   useEffect(() => {
     dispatch(getAllCategories());
@@ -53,44 +92,22 @@ const Categories: React.FC = () => {
 
   const handleOpenAddModal = () => {
     setModalMode("add");
-    setName("");
     setEditingCategory(null);
+    formik.resetForm();
     setModalOpen(true);
   };
 
   const handleOpenEditModal = (category: any) => {
     setModalMode("edit");
     setEditingCategory(category);
-    setName(category.name);
+    formik.setValues({ name: category.name });
     setModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setModalOpen(false);
-    setName("");
     setEditingCategory(null);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (modalMode === "add") {
-      const result = await dispatch(createCategory({ name }));
-      if (createCategory.fulfilled.match(result)) {
-        handleCloseModal();
-      }
-    } else if (modalMode === "edit" && editingCategory) {
-      const result = await dispatch(
-        updateCategory({
-          id: editingCategory._id,
-          name: name,
-        })
-      );
-
-      if (updateCategory.fulfilled.match(result)) {
-        handleCloseModal();
-      }
-    }
+    formik.resetForm();
   };
 
   const handleToggleStatus = (categoryId: string, currentStatus: boolean) => {
@@ -99,6 +116,11 @@ const Categories: React.FC = () => {
         id: categoryId,
         isActive: !currentStatus,
       })
+    );
+    toast.success(
+      !currentStatus
+        ? "Category Activated Successfully!"
+        : "Category Deactivated Successfully!"
     );
   };
 
@@ -117,9 +139,9 @@ const Categories: React.FC = () => {
   };
 
   const isSubmitDisabled = () => {
-    if (isLoading || !name.trim()) return true;
+    if (isLoading || !formik.values.name.trim()) return true;
     if (modalMode === "edit" && editingCategory) {
-      return name === editingCategory.name;
+      return formik.values.name === editingCategory.name;
     }
     return false;
   };
@@ -135,9 +157,24 @@ const Categories: React.FC = () => {
         }}
       >
         <Typography variant="h5">Categories</Typography>
-        <Button variant="contained" onClick={handleOpenAddModal}>
-          Add Category
-        </Button>
+        <Tooltip title="Add Category">
+          <IconButton
+            color="primary"
+            onClick={handleOpenAddModal}
+            sx={{
+              backgroundColor: "primary.main",
+              color: "white",
+              "&:hover": {
+                backgroundColor: "primary.dark",
+              },
+              "&:disabled": {
+                backgroundColor: "action.disabled",
+              },
+            }}
+          >
+            <AddIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       {error && (
@@ -249,15 +286,18 @@ const Categories: React.FC = () => {
       >
         <DialogTitle sx={{ pb: 0 }}>{getModalTitle()}</DialogTitle>
         <DialogContent>
-          <Box component="form" onSubmit={handleSubmit}>
+          <Box component="form" onSubmit={formik.handleSubmit} noValidate>
             <TextField
               fullWidth
               label="Category Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              name="name"
+              value={formik.values.name}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               required
               disabled={isLoading}
-              error={!name.trim() && name.length > 0}
+              error={formik.touched.name && Boolean(formik.errors.name)}
+              helperText={formik.touched.name && formik.errors.name}
               margin="normal"
               sx={{ mb: 1 }}
             />
@@ -286,7 +326,7 @@ const Categories: React.FC = () => {
               <Button
                 variant="contained"
                 type="submit"
-                disabled={isSubmitDisabled()}
+                disabled={isSubmitDisabled() || !formik.isValid}
               >
                 {getSubmitButtonText()}
               </Button>

@@ -144,7 +144,7 @@ const Register: React.FC = () => {
               >
                 <MenuItem value="">Select Role</MenuItem>
                 <MenuItem value="customer">Customer</MenuItem>
-                <MenuItem value="support">Support Agent</MenuItem>
+                <MenuItem value="agent">Support Agent</MenuItem>
                 <MenuItem value="admin">Admin</MenuItem>
               </TextField>
               <TextField

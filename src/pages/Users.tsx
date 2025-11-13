@@ -26,16 +26,17 @@ import {
   ToggleOn as ToggleOnIcon,
   ToggleOff as ToggleOffIcon,
   Edit as EditIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
-import EditUserDialog from "./EditUserDialog";
+import AddEditUserDialog from "./AddEditUserDialog";
+import { toast } from "react-toastify";
 
 const Users: React.FC = () => {
   const dispatch = useAppDispatch();
   const { users, isLoading, error } = useAppSelector((state) => state.user);
   const { user: currentUser } = useAppSelector((state) => state.auth);
 
-  // State for edit dialog
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [userModalOpen, setUserModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
   useEffect(() => {
@@ -51,18 +52,27 @@ const Users: React.FC = () => {
     );
 
     if (toggleUserStatus.fulfilled.match(result)) {
+      toast.success(
+        `User has been ${
+          !currentStatus ? "activated" : "deactivated"
+        } successfully`
+      );
       dispatch(getAllUsers(1));
     }
   };
 
-  // Edit user handlers
-  const handleEditClick = (user: any) => {
-    setSelectedUser(user);
-    setEditDialogOpen(true);
+  const handleAddClick = () => {
+    setSelectedUser(null);
+    setUserModalOpen(true);
   };
 
-  const handleEditClose = () => {
-    setEditDialogOpen(false);
+  const handleEditClick = (user: any) => {
+    setSelectedUser(user);
+    setUserModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setUserModalOpen(false);
     setSelectedUser(null);
   };
 
@@ -99,9 +109,30 @@ const Users: React.FC = () => {
         }}
       >
         <Typography variant="h5">Users Management</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Total Users: {users.length}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Total Users: {users.length}
+          </Typography>
+          <Tooltip title="Add New User">
+            <IconButton
+              color="primary"
+              onClick={handleAddClick}
+              disabled={isLoading}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "primary.dark",
+                },
+                "&:disabled": {
+                  backgroundColor: "action.disabled",
+                },
+              }}
+            >
+              <AddIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       {error && (
@@ -231,11 +262,9 @@ const Users: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
-
-      {/* Edit User Dialog */}
-      <EditUserDialog
-        open={editDialogOpen}
-        onClose={handleEditClose}
+      <AddEditUserDialog
+        open={userModalOpen}
+        onClose={handleModalClose}
         user={selectedUser}
         onUserUpdated={handleUserUpdated}
       />
