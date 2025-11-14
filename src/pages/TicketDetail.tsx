@@ -1,8 +1,6 @@
-"use client";
-
 import type React from "react";
 import { useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   Container,
   Card,
@@ -12,30 +10,22 @@ import {
   Stack,
   Chip,
   Divider,
-  TextField,
-  Box,
   Paper,
   CircularProgress,
   Alert,
   Grid,
 } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../hooks";
-import {
-  getTicketById,
-  addAgentComment,
-  clearError,
-} from "../store/slices/ticketSlice";
-import { useState } from "react";
+import { getTicketById, clearError } from "../store/slices/ticketSlice";
 
 const TicketDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const { currentTicket, isLoading, error } = useAppSelector(
     (state) => state.ticket
   );
-  const { user } = useAppSelector((state) => state.auth);
-  const [comment, setComment] = useState("");
+  // const { user } = useAppSelector((state) => state.auth);
+  // const [comment, setComment] = useState("");
 
   useEffect(() => {
     if (id) {
@@ -43,16 +33,16 @@ const TicketDetail: React.FC = () => {
     }
   }, [dispatch, id]);
 
-  const handleAddComment = async () => {
-    if (comment.trim() && id) {
-      const result = await dispatch(
-        addAgentComment({ id, commentText: comment })
-      );
-      if (addAgentComment.fulfilled.match(result)) {
-        setComment("");
-      }
-    }
-  };
+  // const handleAddComment = async () => {
+  //   if (comment.trim() && id) {
+  //     const result = await dispatch(
+  //       addAgentComment({ id, commentText: comment })
+  //     );
+  //     if (addAgentComment.fulfilled.match(result)) {
+  //       setComment("");
+  //     }
+  //   }
+  // };
 
   if (isLoading && !currentTicket) {
     return (
@@ -69,7 +59,7 @@ const TicketDetail: React.FC = () => {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Alert severity="error">Ticket not found</Alert>
-        <Button onClick={() => navigate("/tickets")} sx={{ mt: 2 }}>
+        <Button onClick={() => window.history.back()} sx={{ mt: 2 }}>
           Back to Tickets
         </Button>
       </Container>
@@ -78,8 +68,8 @@ const TicketDetail: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Button onClick={() => navigate("/tickets")} sx={{ mb: 2 }}>
-        ← Back to Tickets
+      <Button onClick={() => window.history.back()} sx={{ mb: 2 }}>
+        Back to Tickets
       </Button>
 
       {error && (
@@ -132,11 +122,27 @@ const TicketDetail: React.FC = () => {
               <Divider sx={{ my: 2 }} />
 
               <Typography variant="h6" sx={{ mb: 2 }}>
+                User Comment
+              </Typography>
+              {!currentTicket.commentText ||
+              currentTicket.commentText.trim() === "" ? (
+                <Typography variant="body2" sx={{ color: "gray", mb: 2 }}>
+                  No user comments yet
+                </Typography>
+              ) : (
+                <Paper sx={{ p: 2, mb: 2 }}>
+                  <Typography variant="body2">
+                    {currentTicket.commentText}
+                  </Typography>
+                </Paper>
+              )}
+
+              <Typography variant="h6" sx={{ mb: 2 }}>
                 Agent Comments
               </Typography>
               {currentTicket.agentComments.length === 0 ? (
                 <Typography variant="body2" sx={{ color: "gray", mb: 2 }}>
-                  No comments yet
+                  No agent comments yet
                 </Typography>
               ) : (
                 currentTicket.agentComments.map((comment: any, index: any) => (
@@ -157,13 +163,13 @@ const TicketDetail: React.FC = () => {
                 ))
               )}
 
-              {user?.role === "agent" && (
+              {/* {user.user?.role === "agent" && (
                 <Box sx={{ mt: 3 }}>
                   <TextField
                     fullWidth
                     multiline
                     rows={3}
-                    placeholder="Add a comment..."
+                    placeholder="Add a comment as agent..."
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     sx={{ mb: 2 }}
@@ -173,10 +179,14 @@ const TicketDetail: React.FC = () => {
                     onClick={handleAddComment}
                     disabled={!comment.trim() || isLoading}
                   >
-                    {isLoading ? <CircularProgress size={24} /> : "Add Comment"}
+                    {isLoading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      "Add Comment as Agent"
+                    )}
                   </Button>
                 </Box>
-              )}
+              )} */}
             </CardContent>
           </Card>
         </Grid>

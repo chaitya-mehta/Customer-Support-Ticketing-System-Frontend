@@ -28,18 +28,22 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  DialogActions,
+  Tooltip,
 } from "@mui/material";
+import { Visibility, Comment } from "@mui/icons-material";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import {
   clearError,
   createTicket,
-  getAllTickets,
   getTicketsByUser,
+  updateTicket,
 } from "../store/slices/ticketSlice";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { Delete, AttachFile } from "@mui/icons-material";
+import { Delete, AttachFile, Add, Edit } from "@mui/icons-material";
+import { getActiveCategories } from "../store/slices/categorySlice";
 
 // File validation constants
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -63,25 +67,28 @@ const Dashboard: React.FC = () => {
   const { activeCategories } = useAppSelector((state) => state.category);
   const { user } = useAppSelector((state) => state.auth);
   const [open, setOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingTicket, setEditingTicket] = useState<any>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!user) return;
-    if (user.role === "Customer") {
-      dispatch(getTicketsByUser());
-    } else {
-      dispatch(getAllTickets());
-    }
-  }, [dispatch, user]);
+    dispatch(getTicketsByUser());
+    dispatch(getActiveCategories());
+  }, [dispatch]);
 
-  // Yup Validation Schema
-  const validationSchema = Yup.object({
+  // Check if user is customer
+  const isCustomer = user.user?.role === "customer";
+
+  // Create validation schema
+  const createValidationSchema = Yup.object({
     name: Yup.string()
+      .trim()
       .required("Title is required")
       .min(5, "Title must be at least 5 characters")
       .max(100, "Title must not exceed 100 characters"),
     description: Yup.string()
+      .trim()
       .required("Description is required")
       .min(10, "Description must be at least 10 characters")
       .max(1000, "Description must not exceed 1000 characters"),
@@ -89,7 +96,28 @@ const Dashboard: React.FC = () => {
     priority: Yup.string()
       .oneOf(["low", "medium", "high"], "Invalid priority level")
       .required("Priority is required"),
+    commentText: Yup.string()
+      .trim()
+      .max(500, "Comment must not exceed 500 characters")
+      .notRequired(),
   });
+
+  // Edit validation schema - only comment validation
+  const editValidationSchema = Yup.object({
+    name: Yup.string(),
+    description: Yup.string(),
+    category: Yup.string(),
+    priority: Yup.string(),
+    commentText: Yup.string()
+      .trim()
+      .required("Comment is required")
+      .min(3, "Comment must be at least 3 characters") // Minimum 3 characters
+      .max(500, "Comment must not exceed 500 characters"),
+  });
+
+  // Conditional validation schema
+  const validationSchema =
+    isEditMode && isCustomer ? editValidationSchema : createValidationSchema;
 
   const formik = useFormik({
     initialValues: {
@@ -97,50 +125,98 @@ const Dashboard: React.FC = () => {
       description: "",
       category: "",
       priority: "medium" as "low" | "medium" | "high",
+      commentText: "",
     },
-    validationSchema,
+    validationSchema: validationSchema,
+    validateOnChange: true,
+    validateOnBlur: true,
     onSubmit: async (values, { resetForm, setSubmitting }) => {
       try {
-        const payload = {
-          name: values.name,
-          description: values.description,
-          category: values.category,
-          priority: values.priority,
-          attachments: attachments.length > 0 ? attachments : undefined,
-        };
-
-        const result = await dispatch(createTicket(payload));
-
-        if (createTicket.fulfilled.match(result)) {
-          resetForm();
-          setAttachments([]);
-          setFileErrors([]);
-          handleClose();
-
-          if (user?.role === "Customer") {
+        if (isEditMode && editingTicket && isCustomer) {
+          console.log("Updating ticket comment:", values.commentText);
+          // Only update comment for customer in edit mode
+          const result = await dispatch(
+            updateTicket({
+              id: editingTicket._id,
+              commentText: values.commentText.trim(),
+            })
+          );
+          console.log("Update result:", result, updateTicket.fulfilled);
+          if (updateTicket.fulfilled.match(result)) {
+            resetForm();
+            handleClose();
             dispatch(getTicketsByUser());
-          } else {
-            dispatch(getAllTickets());
+          }
+        } else {
+          // Create new ticket (original logic)
+          const formData = new FormData();
+          formData.append("name", values.name.trim());
+          formData.append("description", values.description.trim());
+          formData.append("category", values.category);
+          formData.append("priority", values.priority);
+
+          // Append comment if provided
+          if (values.commentText.trim()) {
+            formData.append("commentText", values.commentText.trim());
+          }
+
+          // Append attachments if any
+          attachments.forEach((file) => {
+            formData.append("attachments", file);
+          });
+
+          const result = await dispatch(createTicket(formData));
+
+          if (createTicket.fulfilled.match(result)) {
+            resetForm();
+            setAttachments([]);
+            setFileErrors([]);
+            handleClose();
+            dispatch(getTicketsByUser());
           }
         }
       } catch (error) {
-        console.error("Error creating ticket:", error);
+        console.error("Error in ticket operation:", error);
       } finally {
         setSubmitting(false);
       }
     },
   });
 
-  const handleOpen = () => setOpen(true);
+  const handleOpen = () => {
+    setIsEditMode(false);
+    setEditingTicket(null);
+    setOpen(true);
+  };
+
+  const handleEdit = (ticket: any) => {
+    setIsEditMode(true);
+    setEditingTicket(ticket);
+
+    // Set form values for editing
+    formik.setValues({
+      name: ticket.name,
+      description: ticket.description,
+      category:
+        typeof ticket.category === "string"
+          ? ticket.category
+          : ticket.category?._id,
+      priority: ticket.priority,
+      commentText: ticket.commentText || "",
+    });
+
+    setOpen(true);
+  };
 
   const handleClose = () => {
     setOpen(false);
+    setIsEditMode(false);
+    setEditingTicket(null);
     formik.resetForm();
     setAttachments([]);
     setFileErrors([]);
   };
 
-  // File handling functions
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
@@ -243,11 +319,21 @@ const Dashboard: React.FC = () => {
         }}
       >
         <Typography variant="h5">Tickets</Typography>
-        {user?.role === "Customer" && (
-          <Button variant="contained" onClick={handleOpen}>
-            Create Ticket
-          </Button>
-        )}
+        <Tooltip title="Create New Ticket">
+          <IconButton
+            color="primary"
+            onClick={handleOpen}
+            sx={{
+              backgroundColor: "primary.main",
+              color: "white",
+              "&:hover": {
+                backgroundColor: "primary.dark",
+              },
+            }}
+          >
+            <Add />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       {error && (
@@ -264,24 +350,27 @@ const Dashboard: React.FC = () => {
         <Table>
           <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
             <TableRow>
-              <TableCell>Title</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Priority</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Created</TableCell>
-              <TableCell>Action</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Title</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Category</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Priority</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Created</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: "center", py: 4 }}>
+                <TableCell colSpan={7} sx={{ textAlign: "center", py: 4 }}>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : tickets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: "center", py: 4 }}>
+                <TableCell
+                  colSpan={7}
+                  sx={{ textAlign: "center", py: 4, fontWeight: "bold" }}
+                >
                   No tickets found
                 </TableCell>
               </TableRow>
@@ -312,12 +401,28 @@ const Dashboard: React.FC = () => {
                     {new Date(ticket.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="small"
-                      onClick={() => navigate(`/tickets/${ticket._id}`)}
-                    >
-                      View
-                    </Button>
+                    <Stack direction="row" spacing={1}>
+                      <Tooltip title="View Ticket">
+                        <IconButton
+                          size="small"
+                          onClick={() => navigate(`/tickets/${ticket._id}`)}
+                          color="primary"
+                        >
+                          <Visibility />
+                        </IconButton>
+                      </Tooltip>
+                      {isCustomer && (
+                        <Tooltip title="Add Comment">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEdit(ticket)}
+                            color="secondary"
+                          >
+                            <Comment />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))
@@ -326,11 +431,15 @@ const Dashboard: React.FC = () => {
         </Table>
       </TableContainer>
 
-      {/* CREATE TICKET DIALOG */}
+      {/* CREATE/EDIT TICKET DIALOG */}
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-        <DialogTitle>Create New Ticket</DialogTitle>
-        <DialogContent>
-          <form onSubmit={formik.handleSubmit}>
+        <DialogTitle sx={{ pb: 0 }}>
+          {isEditMode && isCustomer
+            ? "Add Comment to Ticket"
+            : "Create New Ticket"}
+        </DialogTitle>
+        <DialogContent sx={{ pb: 0 }}>
+          <Box component="form" onSubmit={formik.handleSubmit} noValidate>
             <Stack spacing={3} sx={{ mt: 1 }}>
               {/* Title Field */}
               <TextField
@@ -342,6 +451,8 @@ const Dashboard: React.FC = () => {
                 onBlur={formik.handleBlur}
                 error={formik.touched.name && Boolean(formik.errors.name)}
                 helperText={formik.touched.name && formik.errors.name}
+                placeholder="Enter a descriptive title for your issue"
+                disabled={isEditMode && isCustomer}
               />
 
               {/* Description Field */}
@@ -361,35 +472,40 @@ const Dashboard: React.FC = () => {
                 helperText={
                   formik.touched.description && formik.errors.description
                 }
+                placeholder="Please provide detailed information about your issue..."
+                disabled={isEditMode && isCustomer}
               />
 
               {/* Category Field */}
-              <FormControl
+              <TextField
+                select
                 fullWidth
+                label="Category *"
+                name="category"
+                value={formik.values.category}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 error={
                   formik.touched.category && Boolean(formik.errors.category)
                 }
+                helperText={formik.touched.category && formik.errors.category}
+                disabled={isEditMode && isCustomer}
               >
-                <InputLabel>Category *</InputLabel>
-                <Select
-                  name="category"
-                  value={formik.values.category}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  label="Category *"
-                >
-                  {activeCategories.map((cat: any) => (
+                <MenuItem value="">
+                  <em>Select a category</em>
+                </MenuItem>
+                {activeCategories && activeCategories.length > 0 ? (
+                  activeCategories.map((cat: any) => (
                     <MenuItem key={cat._id} value={cat._id}>
                       {cat.name}
                     </MenuItem>
-                  ))}
-                </Select>
-                {formik.touched.category && formik.errors.category && (
-                  <Typography variant="caption" color="error">
-                    {formik.errors.category}
-                  </Typography>
+                  ))
+                ) : (
+                  <MenuItem value="" disabled>
+                    No categories available
+                  </MenuItem>
                 )}
-              </FormControl>
+              </TextField>
 
               {/* Priority Field */}
               <FormControl
@@ -405,6 +521,7 @@ const Dashboard: React.FC = () => {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   label="Priority *"
+                  disabled={isEditMode && isCustomer}
                 >
                   <MenuItem value="low">Low</MenuItem>
                   <MenuItem value="medium">Medium</MenuItem>
@@ -417,111 +534,148 @@ const Dashboard: React.FC = () => {
                 )}
               </FormControl>
 
-              {/* FILE UPLOAD SECTION - SIMPLIFIED AND GUARANTEED TO SHOW */}
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Attachments
-                </Typography>
+              {/* Comment Field */}
+              <TextField
+                fullWidth
+                label={
+                  isEditMode && isCustomer
+                    ? "Your Comment *"
+                    : "Additional Comments (Optional)"
+                }
+                name="commentText"
+                multiline
+                rows={4}
+                value={formik.values.commentText}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.commentText &&
+                  Boolean(formik.errors.commentText)
+                }
+                helperText={
+                  formik.touched.commentText && formik.errors.commentText
+                }
+                placeholder={
+                  isEditMode && isCustomer
+                    ? "Enter your comments or updates about this ticket (minimum 3 characters)..."
+                    : "Any additional comments or information..."
+                }
+              />
 
-                {/* File Error Alert */}
-                {fileErrors.length > 0 && (
-                  <Alert
-                    severity="error"
-                    sx={{ mb: 2 }}
-                    onClose={clearFileErrors}
+              {/* FILE UPLOAD SECTION - Hide in edit mode for customers */}
+              {!(isEditMode && isCustomer) && (
+                <Box>
+                  <Typography
+                    variant="subtitle1"
+                    gutterBottom
+                    fontWeight="medium"
                   >
-                    {fileErrors.map((error, index) => (
-                      <div key={index}>{error}</div>
-                    ))}
-                  </Alert>
-                )}
-
-                {/* File Upload Button */}
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<AttachFile />}
-                  sx={{ mb: 2 }}
-                >
-                  Select Files
-                  <input
-                    type="file"
-                    hidden
-                    multiple
-                    onChange={handleFileSelect}
-                    accept={ALLOWED_FILE_TYPES.join(",")}
-                  />
-                </Button>
-
-                {/* File List - Always visible section */}
-                <Box
-                  sx={{
-                    border: "1px solid #e0e0e0",
-                    borderRadius: 1,
-                    p: 2,
-                    minHeight: 100,
-                  }}
-                >
-                  <Typography variant="subtitle2" gutterBottom>
-                    Selected Files ({attachments.length})
+                    Attachments (Optional)
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
+                    Maximum file size: 5MB. Allowed types: Images, PDF, Word,
+                    Excel, Text files
                   </Typography>
 
-                  {attachments.length === 0 ? (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ fontStyle: "italic" }}
+                  {/* File Error Alert */}
+                  {fileErrors.length > 0 && (
+                    <Alert
+                      severity="error"
+                      sx={{ mb: 2 }}
+                      onClose={clearFileErrors}
                     >
-                      No files selected. Click "Select Files" to add
-                      attachments.
-                    </Typography>
-                  ) : (
-                    <List dense>
-                      {attachments.map((file, index) => (
-                        <ListItem
-                          key={index}
-                          secondaryAction={
-                            <IconButton
-                              edge="end"
-                              onClick={() => handleRemoveFile(index)}
-                              size="small"
-                            >
-                              <Delete />
-                            </IconButton>
-                          }
-                        >
-                          <ListItemIcon>
-                            <AttachFile />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={file.name}
-                            secondary={formatFileSize(file.size)}
-                          />
-                        </ListItem>
+                      {fileErrors.map((error, index) => (
+                        <div key={index}>{error}</div>
                       ))}
-                    </List>
+                    </Alert>
+                  )}
+
+                  {/* File Upload Button */}
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<AttachFile />}
+                    sx={{ mb: 2 }}
+                  >
+                    Select Files
+                    <input
+                      type="file"
+                      hidden
+                      multiple
+                      onChange={handleFileSelect}
+                      accept={ALLOWED_FILE_TYPES.join(",")}
+                    />
+                  </Button>
+
+                  {/* File List */}
+                  {attachments.length > 0 && (
+                    <Box
+                      sx={{
+                        border: "1px solid",
+                        borderColor: "divider",
+                        borderRadius: 1,
+                        p: 2,
+                      }}
+                    >
+                      <Typography variant="subtitle2" gutterBottom>
+                        Selected Files ({attachments.length})
+                      </Typography>
+                      <List dense>
+                        {attachments.map((file, index) => (
+                          <ListItem
+                            key={index}
+                            secondaryAction={
+                              <IconButton
+                                edge="end"
+                                onClick={() => handleRemoveFile(index)}
+                                size="small"
+                                color="error"
+                              >
+                                <Delete />
+                              </IconButton>
+                            }
+                          >
+                            <ListItemIcon>
+                              <AttachFile />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={file.name}
+                              secondary={formatFileSize(file.size)}
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Box>
                   )}
                 </Box>
-              </Box>
-
-              {/* Action Buttons */}
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ justifyContent: "flex-end", pt: 2 }}
-              >
-                <Button onClick={handleClose}>Cancel</Button>
-                <Button
-                  variant="contained"
-                  type="submit"
-                  disabled={isLoading || !formik.isValid}
-                >
-                  {isLoading ? <CircularProgress size={24} /> : "Create Ticket"}
-                </Button>
-              </Stack>
+              )}
             </Stack>
-          </form>
+          </Box>
         </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button onClick={handleClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            type="submit"
+            onClick={() => formik.handleSubmit()}
+            disabled={isLoading || !formik.isValid || formik.isSubmitting}
+            startIcon={isLoading ? <CircularProgress size={16} /> : null}
+          >
+            {isLoading
+              ? isEditMode
+                ? "Updating Comment..."
+                : "Creating..."
+              : isEditMode
+              ? "Update Comment"
+              : "Create Ticket"}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Container>
   );

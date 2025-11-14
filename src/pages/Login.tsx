@@ -15,7 +15,7 @@ import { login } from "../store/slices/authSlice";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
-import { ROLES } from "../types"; // Import ROLES
+import { ROLES } from "../types";
 
 const Login: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -62,8 +62,7 @@ const Login: React.FC = () => {
 
         // Determine redirect path based on role
         const redirectPath = getRedirectPath(userRole);
-
-        setTimeout(() => navigate(redirectPath), 1500);
+        navigate(redirectPath);
       } else if (login.rejected.match(result)) {
         toast.error(result.payload as string);
       }
@@ -96,7 +95,12 @@ const Login: React.FC = () => {
             Login to your account
           </Typography>
 
-          <form onSubmit={formik.handleSubmit}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              formik.handleSubmit();
+            }}
+          >
             <Stack spacing={2}>
               <TextField
                 fullWidth

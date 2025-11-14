@@ -192,12 +192,11 @@ const categorySlice = createSlice({
       })
       .addCase(toggleCategoryStatus.fulfilled, (state, action) => {
         state.isLoading = false;
-        console.log("Toggled Category:", action.payload);
         const index = state.categories.findIndex(
           (c) => c._id === action.payload!._id
         );
         if (index !== -1) {
-          state.categories[index] = action.payload!;
+          state.categories[index].isActive = action.payload!.isActive;
         }
       })
       .addCase(toggleCategoryStatus.rejected, (state, action) => {

@@ -4,7 +4,6 @@ const API_BASE_URL = "http://localhost:5000/api";
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
 });
 let navigateFn: ((path: string) => void) | null = null;
 

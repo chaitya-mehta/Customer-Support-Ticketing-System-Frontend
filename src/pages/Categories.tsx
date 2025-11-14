@@ -87,8 +87,10 @@ const Categories: React.FC = () => {
   });
 
   useEffect(() => {
-    dispatch(getAllCategories());
-  }, [dispatch]);
+    if (categories.length === 0) {
+      dispatch(getAllCategories());
+    }
+  }, [categories, dispatch]);
 
   const handleOpenAddModal = () => {
     setModalMode("add");

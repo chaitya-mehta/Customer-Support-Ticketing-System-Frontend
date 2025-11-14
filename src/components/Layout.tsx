@@ -125,7 +125,7 @@ const Layout: React.FC = () => {
               sx={{ bgcolor: "#1976d2", cursor: "pointer" }}
               onClick={handleMenu}
             >
-              {user?.name?.charAt(0).toUpperCase()}
+              {user.user?.name?.charAt(0).toUpperCase()}
             </Avatar>
             <Menu
               anchorEl={anchorEl}
@@ -133,12 +133,10 @@ const Layout: React.FC = () => {
               onClose={handleClose}
             >
               <MenuItem disabled>
-                <Typography variant="body2">
-                  {user?.name || "Chaitya"}
-                </Typography>
+                <Typography variant="body2">{user.user?.name}</Typography>
               </MenuItem>
               <MenuItem disabled>
-                <Typography variant="caption">{user?.email}</Typography>
+                <Typography variant="caption">{user.user?.email}</Typography>
               </MenuItem>
               <Divider />
               <MenuItem onClick={handleLogout}>

@@ -42,9 +42,10 @@ export interface Ticket {
   assignedAgent?: User | string;
   attachments: Attachment[];
   agentComments: AgentComment[];
-  createdBy: string;
+  createdBy: User | string;
   createdAt: string;
   updatedAt: string;
+  commentText?: string;
 }
 
 export interface AuthState {

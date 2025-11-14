@@ -68,9 +68,7 @@ function AppContent() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute
-                allowedRoles={[ROLES.ADMIN, ROLES.AGENT, ROLES.CUSTOMER]}
-              >
+              <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
                 <Dashboard />
               </ProtectedRoute>
             }
@@ -78,9 +76,7 @@ function AppContent() {
           <Route
             path="/tickets"
             element={
-              <ProtectedRoute
-                allowedRoles={[ROLES.ADMIN, ROLES.AGENT, ROLES.CUSTOMER]}
-              >
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.AGENT]}>
                 <Tickets />
               </ProtectedRoute>
             }

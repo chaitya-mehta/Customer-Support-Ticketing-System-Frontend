@@ -10,39 +10,23 @@ interface TicketState {
   error: string | null;
 }
 
-interface CreateTicketPayload {
-  name: string;
-  description: string;
-  category: string;
-  priority: "low" | "medium" | "high";
-  attachments?: File[];
-}
+// interface CreateTicketPayload {
+//   name: string;
+//   description: string;
+//   category: string;
+//   priority: "low" | "medium" | "high";
+//   attachments?: File[];
+// }
 
 interface UpdateTicketPayload {
   id: string;
-  data: {
-    status?: string;
-    priority?: string;
-    assignedAgent?: string;
-  };
+  commentText: string;
 }
 
 export const createTicket = createAsyncThunk(
   "ticket/create",
-  async (payload: CreateTicketPayload, { rejectWithValue }) => {
+  async (formData: FormData, { rejectWithValue }) => {
     try {
-      const formData = new FormData();
-      formData.append("name", payload.name);
-      formData.append("description", payload.description);
-      formData.append("category", payload.category);
-      formData.append("priority", payload.priority);
-
-      if (payload.attachments) {
-        payload.attachments.forEach((file) => {
-          formData.append("attachments", file);
-        });
-      }
-
       const response = await axiosInstance.post<ApiResponse<Ticket>>(
         TICKET_ENDPOINTS.CREATE,
         formData,
@@ -80,7 +64,7 @@ export const getTicketsByUser = createAsyncThunk(
     try {
       const response = await axiosInstance.get<
         ApiResponse<{ tickets: Ticket[] }>
-      >(TICKET_ENDPOINTS.GET_BY_USER); // 👈 this endpoint must exist in backend
+      >(TICKET_ENDPOINTS.GET_BY_USER);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -110,14 +94,14 @@ export const updateTicket = createAsyncThunk(
   "ticket/update",
   async (payload: UpdateTicketPayload, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.put<ApiResponse<Ticket>>(
+      const response = await axiosInstance.put<ApiResponse<{ ticket: Ticket }>>(
         TICKET_ENDPOINTS.UPDATE(payload.id),
-        payload.data
+        { commentText: payload.commentText }
       );
-      return response.data.data;
+      return response.data.data?.ticket;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to update ticket"
+        error.response?.data?.message || "Failed to update comment"
       );
     }
   }
@@ -125,12 +109,16 @@ export const updateTicket = createAsyncThunk(
 
 export const addAgentComment = createAsyncThunk(
   "ticket/addComment",
-  async (payload: { id: string; commentText: string }, { rejectWithValue }) => {
+  async (
+    payload: { id: string; commentText: string; status: string },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await axiosInstance.post<ApiResponse<Ticket>>(
         TICKET_ENDPOINTS.ADD_COMMENT(payload.id),
         {
           commentText: payload.commentText,
+          status: payload.status,
         }
       );
       return response.data.data;
