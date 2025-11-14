@@ -1,7 +1,7 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosInstance from "../../api/axiosInstance";
 import { AUTH_ENDPOINTS } from "../../api/endpoints";
-import type { User, AuthState, ApiResponse } from "../../types";
+import type { ApiResponse, AuthState, User } from "../../types";
 
 interface LoginPayload {
   email: string;

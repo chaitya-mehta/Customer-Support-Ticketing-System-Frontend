@@ -1,22 +1,22 @@
+import {
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Container,
+  Divider,
+  Grid,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
 import type React from "react";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-import {
-  Container,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Stack,
-  Chip,
-  Divider,
-  Paper,
-  CircularProgress,
-  Alert,
-  Grid,
-} from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../hooks";
-import { getTicketById, clearError } from "../store/slices/ticketSlice";
+import { clearError, getTicketById } from "../store/slices/ticketSlice";
 
 const TicketDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();

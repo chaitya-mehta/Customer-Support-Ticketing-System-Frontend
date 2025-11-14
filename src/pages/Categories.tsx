@@ -1,54 +1,70 @@
-import type React from "react";
-import { useEffect, useState } from "react";
 import {
-  Container,
+  Add as AddIcon,
+  Edit as EditIcon,
+  ToggleOff as ToggleOffIcon,
+  ToggleOn as ToggleOnIcon,
+} from "@mui/icons-material";
+import {
+  Alert,
+  Box,
   Button,
+  Chip,
+  CircularProgress,
+  Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
   TextField,
-  Stack,
-  CircularProgress,
-  Alert,
-  Box,
-  Typography,
-  IconButton,
   Tooltip,
+  Typography,
 } from "@mui/material";
-import {
-  Edit as EditIcon,
-  ToggleOn as ToggleOnIcon,
-  ToggleOff as ToggleOffIcon,
-} from "@mui/icons-material";
+import { useFormik } from "formik";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import * as Yup from "yup";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import {
-  getAllCategories,
-  createCategory,
-  toggleCategoryStatus,
   clearError,
+  createCategory,
+  getAllCategories,
+  toggleCategoryStatus,
   updateCategory,
 } from "../store/slices/categorySlice";
-import { Add as AddIcon } from "@mui/icons-material";
-import { toast } from "react-toastify";
-import { useFormik } from "formik";
-import * as Yup from "yup";
+import { useDebounce } from "../utils/useDebounce";
+import Pagination from "./Pagination";
 
 const Categories: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { categories, isLoading, error } = useAppSelector(
-    (state) => state.category
-  );
+  const {
+    categories,
+    isLoading,
+    error,
+    totalPages,
+    totalRecords,
+    pageSize = 2,
+  } = useAppSelector((state) => state.category);
+
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<boolean | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editingCategory, setEditingCategory] = useState<any>(null);
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   const categoryValidationSchema = Yup.object({
     name: Yup.string()
@@ -70,6 +86,7 @@ const Categories: React.FC = () => {
         if (createCategory.fulfilled.match(result)) {
           toast.success("Category Added successfully!");
           handleCloseModal();
+          handleFetchCategories(1);
         }
       } else if (modalMode === "edit" && editingCategory) {
         const result = await dispatch(
@@ -87,10 +104,52 @@ const Categories: React.FC = () => {
   });
 
   useEffect(() => {
-    if (categories.length === 0) {
-      dispatch(getAllCategories());
-    }
-  }, [categories, dispatch]);
+    dispatch(
+      getAllCategories({
+        page: 1,
+        limit: pageSize,
+        search: debouncedSearchQuery,
+        isActive: statusFilter,
+      })
+    );
+  }, [debouncedSearchQuery, dispatch, pageSize, statusFilter]);
+
+  const handleFetchCategories = (pageNumber: number) => {
+    setPage(pageNumber);
+    dispatch(
+      getAllCategories({
+        page: pageNumber,
+        limit: pageSize,
+        search: searchQuery,
+        isActive: statusFilter,
+      })
+    );
+  };
+
+  useEffect(() => {
+    handleFetchCategories(1);
+  }, [dispatch]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setPage(1);
+  };
+
+  const handleStatusFilterChange = (e: any) => {
+    const value = e.target.value;
+    const filterValue = value === "" ? null : value === "true";
+    setStatusFilter(filterValue);
+    setPage(1);
+    dispatch(
+      getAllCategories({
+        page: 1,
+        limit: pageSize,
+        search: searchQuery,
+        isActive: filterValue,
+      })
+    );
+  };
 
   const handleOpenAddModal = () => {
     setModalMode("add");
@@ -111,7 +170,9 @@ const Categories: React.FC = () => {
     setEditingCategory(null);
     formik.resetForm();
   };
-
+  const handlePageChange = (pageNumber: number) => {
+    handleFetchCategories(pageNumber);
+  };
   const handleToggleStatus = (categoryId: string, currentStatus: boolean) => {
     dispatch(
       toggleCategoryStatus({
@@ -188,6 +249,31 @@ const Categories: React.FC = () => {
           {error}
         </Alert>
       )}
+
+      <Box sx={{ mb: 3, display: "flex", gap: 2, flexWrap: "wrap" }}>
+        <TextField
+          placeholder="Search by name..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          disabled={isLoading}
+          size="small"
+          sx={{ minWidth: 250 }}
+        />
+
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={statusFilter === null ? "" : statusFilter.toString()}
+            onChange={handleStatusFilterChange}
+            label="Status"
+            disabled={isLoading}
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="true">Active</MenuItem>
+            <MenuItem value="false">Inactive</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
 
       <TableContainer component={Paper}>
         <Table>
@@ -279,6 +365,17 @@ const Categories: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalCount={totalRecords}
+        pageSize={pageSize}
+        isLoading={isLoading}
+        onPageChange={handlePageChange}
+        showRecordsInfo={true}
+        showPageInfo={true}
+      />
 
       <Dialog
         open={modalOpen}

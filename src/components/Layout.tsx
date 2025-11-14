@@ -1,30 +1,30 @@
-import type React from "react";
-import { useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
 import {
-  Box,
+  Category as CategoryIcon,
+  Dashboard as DashboardIcon,
+  Logout as LogoutIcon,
+  Menu as MenuIcon,
+  ConfirmationNumber as TicketIcon,
+} from "@mui/icons-material";
+import {
   AppBar,
-  Toolbar,
+  Avatar,
+  Box,
+  Divider,
   Drawer,
+  IconButton,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Typography,
   Menu,
   MenuItem,
-  Avatar,
-  IconButton,
-  Divider,
+  Toolbar,
+  Typography,
 } from "@mui/material";
-import {
-  Menu as MenuIcon,
-  Dashboard as DashboardIcon,
-  ConfirmationNumber as TicketIcon,
-  Category as CategoryIcon,
-  Logout as LogoutIcon,
-} from "@mui/icons-material";
+import type React from "react";
+import { useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import { logout } from "../store/slices/authSlice";
 import { ROLES } from "../types";

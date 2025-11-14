@@ -1,24 +1,24 @@
-import React, { useEffect, useState } from "react";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Alert,
+  Box,
   Button,
-  TextField,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
-  CircularProgress,
-  Alert,
+  Select,
   Stack,
+  TextField,
   Typography,
-  Box,
-  Chip,
 } from "@mui/material";
+import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../hooks";
-import { updateTicket, clearError, addAgentComment } from "../store/slices/ticketSlice";
+import { addAgentComment, clearError, updateTicket } from "../store/slices/ticketSlice";
 
 interface EditTicketModalProps {
   open: boolean;
@@ -121,7 +121,6 @@ const EditTicketModal: React.FC<EditTicketModalProps> = ({
       </DialogTitle>
 
       <DialogContent>
-        {/* Ticket Information */}
         <Box sx={{ mb: 3, p: 2, backgroundColor: "#f8f9fa", borderRadius: 1 }}>
           <Typography variant="h6" gutterBottom>
             {ticket.name}
@@ -170,7 +169,6 @@ const EditTicketModal: React.FC<EditTicketModalProps> = ({
 
         <form onSubmit={handleSubmit}>
           <Stack spacing={3}>
-            {/* Status Update */}
             <FormControl fullWidth>
               <InputLabel>Update Status</InputLabel>
               <Select
@@ -199,7 +197,6 @@ const EditTicketModal: React.FC<EditTicketModalProps> = ({
               </Typography>
             </FormControl>
 
-            {/* Comment */}
             <TextField
               fullWidth
               label="Add Comment *"
@@ -225,7 +222,6 @@ const EditTicketModal: React.FC<EditTicketModalProps> = ({
               inputProps={{ maxLength: 500 }}
             />
 
-            {/* Current Comments Preview */}
             {ticket.agentComments && ticket.agentComments.length > 0 && (
               <Box>
                 <Typography variant="subtitle2" gutterBottom>

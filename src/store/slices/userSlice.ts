@@ -1,10 +1,10 @@
 import {
-  createSlice,
   createAsyncThunk,
+  createSlice,
   type PayloadAction,
 } from "@reduxjs/toolkit";
-import type { ApiResponse } from "../../types";
 import axiosInstance from "../../api/axiosInstance";
+import type { ApiResponse } from "../../types";
 
 export interface User {
   _id: string;
@@ -15,7 +15,13 @@ export interface User {
   createdAt: string;
   updatedAt: string;
 }
-
+interface PaginationParams {
+  page: number;
+  limit: number;
+  search?: string;
+  role?: string;
+  isActive?: boolean | null;
+}
 interface UserState {
   users: User[];
   isLoading: boolean;
@@ -43,12 +49,35 @@ const USER_ENDPOINTS = {
 
 export const getAllUsers = createAsyncThunk(
   "users/getAll",
-  async (page: number = 1, { rejectWithValue }) => {
+  async (params: PaginationParams, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get<ApiResponse<{ data: User[] }>>(
-        `${USER_ENDPOINTS.GET_ALL}?page=${page}&limit=10`
+      const queryParams = new URLSearchParams();
+      queryParams.append("page", params.page.toString());
+      queryParams.append("limit", params.limit.toString());
+
+      if (params.search && params.search.trim()) {
+        queryParams.append("search", params.search.trim());
+      }
+
+      if (params.role && params.role.trim()) {
+        queryParams.append("role", params.role.trim());
+      }
+
+      if (params.isActive !== null && params.isActive !== undefined) {
+        queryParams.append("isActive", params.isActive.toString());
+      }
+
+      const response = await axiosInstance.get(
+        `${USER_ENDPOINTS.GET_ALL}?${queryParams.toString()}`
       );
-      return response.data.data;
+
+      return {
+        users: response.data.data?.data || response.data.data || [],
+        totalPages: response.data.data?.totalPages || 1,
+        totalCount:
+          response.data.data?.totalRecords || response.data.data?.total || 0,
+        currentPage: response.data.data?.currentPage || params.page,
+      };
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch users"
@@ -117,7 +146,10 @@ const userSlice = createSlice({
       })
       .addCase(getAllUsers.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.users = action.payload?.data || [];
+        // state.users = action.payload?.data || [];
+        state.users = action.payload.users;
+        state.totalPages = action.payload.totalPages;
+        state.totalRecords = action.payload.totalCount;
       })
       .addCase(getAllUsers.rejected, (state, action) => {
         state.isLoading = false;

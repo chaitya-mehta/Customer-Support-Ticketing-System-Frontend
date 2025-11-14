@@ -1,52 +1,50 @@
-import React, { useEffect, useState } from "react";
+import { Add, AttachFile, Comment, Delete, Visibility } from "@mui/icons-material";
 import {
-  Container,
-  Typography,
-  Button,
-  CircularProgress,
-  Box,
   Alert,
-  TableContainer,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
+  Box,
+  Button,
   Chip,
-  DialogTitle,
+  CircularProgress,
+  Container,
   Dialog,
-  Stack,
-  TextField,
+  DialogActions,
   DialogContent,
+  DialogTitle,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Paper,
   IconButton,
+  InputLabel,
   List,
   ListItem,
-  ListItemText,
   ListItemIcon,
-  DialogActions,
+  ListItemText,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
   Tooltip,
+  Typography,
 } from "@mui/material";
-import { Visibility, Comment } from "@mui/icons-material";
+import { useFormik } from "formik";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import * as Yup from "yup";
 import { useAppDispatch, useAppSelector } from "../hooks";
+import { getActiveCategories } from "../store/slices/categorySlice";
 import {
   clearError,
   createTicket,
   getTicketsByUser,
   updateTicket,
 } from "../store/slices/ticketSlice";
-import { useNavigate } from "react-router-dom";
-import { useFormik } from "formik";
-import * as Yup from "yup";
-import { Delete, AttachFile, Add, Edit } from "@mui/icons-material";
-import { getActiveCategories } from "../store/slices/categorySlice";
 
-// File validation constants
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = [
   "image/jpeg",
   "image/jpg",
@@ -77,10 +75,8 @@ const Dashboard: React.FC = () => {
     dispatch(getActiveCategories());
   }, [dispatch]);
 
-  // Check if user is customer
   const isCustomer = user.user?.role === "customer";
 
-  // Create validation schema
   const createValidationSchema = Yup.object({
     name: Yup.string()
       .trim()
@@ -102,7 +98,6 @@ const Dashboard: React.FC = () => {
       .notRequired(),
   });
 
-  // Edit validation schema - only comment validation
   const editValidationSchema = Yup.object({
     name: Yup.string(),
     description: Yup.string(),
@@ -111,11 +106,10 @@ const Dashboard: React.FC = () => {
     commentText: Yup.string()
       .trim()
       .required("Comment is required")
-      .min(3, "Comment must be at least 3 characters") // Minimum 3 characters
+      .min(3, "Comment must be at least 3 characters")
       .max(500, "Comment must not exceed 500 characters"),
   });
 
-  // Conditional validation schema
   const validationSchema =
     isEditMode && isCustomer ? editValidationSchema : createValidationSchema;
 
@@ -133,34 +127,28 @@ const Dashboard: React.FC = () => {
     onSubmit: async (values, { resetForm, setSubmitting }) => {
       try {
         if (isEditMode && editingTicket && isCustomer) {
-          console.log("Updating ticket comment:", values.commentText);
-          // Only update comment for customer in edit mode
           const result = await dispatch(
             updateTicket({
               id: editingTicket._id,
               commentText: values.commentText.trim(),
             })
           );
-          console.log("Update result:", result, updateTicket.fulfilled);
           if (updateTicket.fulfilled.match(result)) {
             resetForm();
             handleClose();
             dispatch(getTicketsByUser());
           }
         } else {
-          // Create new ticket (original logic)
           const formData = new FormData();
           formData.append("name", values.name.trim());
           formData.append("description", values.description.trim());
           formData.append("category", values.category);
           formData.append("priority", values.priority);
 
-          // Append comment if provided
           if (values.commentText.trim()) {
             formData.append("commentText", values.commentText.trim());
           }
 
-          // Append attachments if any
           attachments.forEach((file) => {
             formData.append("attachments", file);
           });
@@ -193,7 +181,6 @@ const Dashboard: React.FC = () => {
     setIsEditMode(true);
     setEditingTicket(ticket);
 
-    // Set form values for editing
     formik.setValues({
       name: ticket.name,
       description: ticket.description,
@@ -431,7 +418,6 @@ const Dashboard: React.FC = () => {
         </Table>
       </TableContainer>
 
-      {/* CREATE/EDIT TICKET DIALOG */}
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle sx={{ pb: 0 }}>
           {isEditMode && isCustomer
@@ -441,7 +427,6 @@ const Dashboard: React.FC = () => {
         <DialogContent sx={{ pb: 0 }}>
           <Box component="form" onSubmit={formik.handleSubmit} noValidate>
             <Stack spacing={3} sx={{ mt: 1 }}>
-              {/* Title Field */}
               <TextField
                 fullWidth
                 label="Title *"
@@ -455,7 +440,6 @@ const Dashboard: React.FC = () => {
                 disabled={isEditMode && isCustomer}
               />
 
-              {/* Description Field */}
               <TextField
                 fullWidth
                 label="Description *"
@@ -476,7 +460,6 @@ const Dashboard: React.FC = () => {
                 disabled={isEditMode && isCustomer}
               />
 
-              {/* Category Field */}
               <TextField
                 select
                 fullWidth
@@ -507,7 +490,6 @@ const Dashboard: React.FC = () => {
                 )}
               </TextField>
 
-              {/* Priority Field */}
               <FormControl
                 fullWidth
                 error={
@@ -534,7 +516,6 @@ const Dashboard: React.FC = () => {
                 )}
               </FormControl>
 
-              {/* Comment Field */}
               <TextField
                 fullWidth
                 label={
@@ -562,7 +543,6 @@ const Dashboard: React.FC = () => {
                 }
               />
 
-              {/* FILE UPLOAD SECTION - Hide in edit mode for customers */}
               {!(isEditMode && isCustomer) && (
                 <Box>
                   <Typography
@@ -581,7 +561,6 @@ const Dashboard: React.FC = () => {
                     Excel, Text files
                   </Typography>
 
-                  {/* File Error Alert */}
                   {fileErrors.length > 0 && (
                     <Alert
                       severity="error"
@@ -594,7 +573,6 @@ const Dashboard: React.FC = () => {
                     </Alert>
                   )}
 
-                  {/* File Upload Button */}
                   <Button
                     variant="outlined"
                     component="label"
@@ -611,7 +589,6 @@ const Dashboard: React.FC = () => {
                     />
                   </Button>
 
-                  {/* File List */}
                   {attachments.length > 0 && (
                     <Box
                       sx={{

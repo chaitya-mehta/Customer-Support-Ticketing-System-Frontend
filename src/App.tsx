@@ -1,28 +1,28 @@
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { useEffect } from "react";
+import { Provider } from "react-redux";
 import {
+  Navigate,
+  Route,
   BrowserRouter as Router,
   Routes,
-  Route,
-  Navigate,
 } from "react-router-dom";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import { Provider } from "react-redux";
-import { store } from "./store/store";
 import { useAppDispatch, useAppSelector } from "./hooks";
 import { getCurrentUser } from "./store/slices/authSlice";
+import { store } from "./store/store";
 
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import Tickets from "./pages/Tickets";
-import TicketDetail from "./pages/TicketDetail";
-import Categories from "./pages/Categories";
+import { ToastContainer } from "react-toastify";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { ToastContainer } from "react-toastify";
-import { ROLES } from "./types";
+import Categories from "./pages/Categories";
+import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import TicketDetail from "./pages/TicketDetail";
+import Tickets from "./pages/Tickets";
 import Users from "./pages/Users";
+import { ROLES } from "./types";
 
 const theme = createTheme({
   palette: {
@@ -53,7 +53,6 @@ function AppContent() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        {/* <Route path="/unauthorized" element={<Unauthorized />} /> */}
 
         <Route
           element={
@@ -64,7 +63,6 @@ function AppContent() {
             </ProtectedRoute>
           }
         >
-          {/* Common routes (Dashboard, Tickets) */}
           <Route
             path="/dashboard"
             element={
@@ -92,19 +90,6 @@ function AppContent() {
             }
           />
 
-          {/* Active categories accessible to all */}
-          {/* <Route
-            path="/active-categories"
-            element={
-              <ProtectedRoute
-                allowedRoles={[ROLES.ADMIN, ROLES.AGENT, ROLES.CUSTOMER]}
-              >
-                <ActiveCategories />
-              </ProtectedRoute>
-            }
-          /> */}
-
-          {/* Admin-only routes */}
           <Route
             path="/users"
             element={

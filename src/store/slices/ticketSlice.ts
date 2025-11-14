@@ -1,15 +1,24 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosInstance from "../../api/axiosInstance";
 import { TICKET_ENDPOINTS } from "../../api/endpoints";
-import type { Ticket, ApiResponse } from "../../types";
+import type { ApiResponse, Ticket } from "../../types";
 
 interface TicketState {
   tickets: Ticket[];
   currentTicket: Ticket | null;
   isLoading: boolean;
   error: string | null;
+  totalPages: number;
+  totalRecords: number;
 }
-
+interface PaginationParams {
+  page: number;
+  limit: number;
+  search?: string;
+  status?: string;
+  priority?: string;
+  category?: string;
+}
 // interface CreateTicketPayload {
 //   name: string;
 //   description: string;
@@ -45,12 +54,39 @@ export const createTicket = createAsyncThunk(
 
 export const getAllTickets = createAsyncThunk(
   "ticket/getAll",
-  async (_, { rejectWithValue }) => {
+  async (params: PaginationParams, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get<
-        ApiResponse<{ tickets: Ticket[] }>
-      >(TICKET_ENDPOINTS.GET_ALL);
-      return response.data.data;
+      const queryParams = new URLSearchParams();
+      queryParams.append("page", params.page.toString());
+      queryParams.append("limit", params.limit.toString());
+
+      if (params.search && params.search.trim()) {
+        queryParams.append("search", params.search.trim());
+      }
+
+      if (params.status && params.status.trim()) {
+        queryParams.append("status", params.status.trim());
+      }
+
+      if (params.priority && params.priority.trim()) {
+        queryParams.append("priority", params.priority.trim());
+      }
+
+      if (params.category && params.category.trim()) {
+        queryParams.append("category", params.category.trim());
+      }
+
+      const response = await axiosInstance.get(
+        `${TICKET_ENDPOINTS.GET_ALL}?${queryParams.toString()}`
+      );
+
+      return {
+        tickets: response.data.data?.tickets || response.data.data || [],
+        totalPages: response.data.data?.totalPages || 1,
+        totalCount:
+          response.data.data?.totalRecords || response.data.data?.total || 0,
+        currentPage: response.data.data?.currentPage || params.page,
+      };
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch tickets"
@@ -135,6 +171,8 @@ const initialState: TicketState = {
   currentTicket: null,
   isLoading: false,
   error: null,
+  totalPages: 1,
+  totalRecords: 0,
 };
 
 const ticketSlice = createSlice({
@@ -179,7 +217,9 @@ const ticketSlice = createSlice({
       })
       .addCase(getAllTickets.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.tickets = action.payload?.tickets || [];
+        state.tickets = action.payload.tickets;
+        state.totalPages = action.payload.totalPages;
+        state.totalRecords = action.payload.totalCount;
       })
       .addCase(getAllTickets.rejected, (state, action) => {
         state.isLoading = false;

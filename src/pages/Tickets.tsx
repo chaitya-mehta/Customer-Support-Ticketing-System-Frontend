@@ -1,68 +1,120 @@
-import type React from "react";
-import { useEffect, useState } from "react";
+import { Edit, Visibility } from "@mui/icons-material";
 import {
+  Alert,
   Box,
-  Container,
   Button,
+  Chip,
+  CircularProgress,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
   TextField,
-  Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-  Alert,
-  Typography,
-  DialogActions,
   Tooltip,
-  IconButton,
+  Typography
 } from "@mui/material";
-import { Visibility, Edit } from "@mui/icons-material";
-import { useAppDispatch, useAppSelector } from "../hooks";
-import {
-  getAllTickets,
-  createTicket,
-  clearError,
-  updateTicket,
-  addAgentComment,
-} from "../store/slices/ticketSlice";
-import { getActiveCategories } from "../store/slices/categorySlice";
-import { useNavigate } from "react-router-dom";
+import type React from "react";
+import { useEffect, useState } from "react";
+
 import { useFormik } from "formik";
+import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
+import { useAppDispatch, useAppSelector } from "../hooks";
+import { getActiveCategories } from "../store/slices/categorySlice";
+import {
+  addAgentComment,
+  clearError,
+  createTicket,
+  getAllTickets,
+} from "../store/slices/ticketSlice";
+import { useDebounce } from "../utils/useDebounce";
+import Pagination from "./Pagination";
 
 const Tickets: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { tickets, isLoading, error } = useAppSelector((state) => state.ticket);
+  const {
+    tickets,
+    isLoading,
+    error,
+    totalPages,
+    pageSize = 2,
+    totalRecords,
+  } = useAppSelector((state) => state.ticket);
   const { activeCategories } = useAppSelector((state) => state.category);
   const { user } = useAppSelector((state) => state.auth);
 
   const [open, setOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTicket, setEditingTicket] = useState<any>(null);
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [priorityFilter, setPriorityFilter] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   useEffect(() => {
-    dispatch(getAllTickets());
+    handleFetchTickets(1);
     dispatch(getActiveCategories());
   }, [dispatch]);
 
-  // Check if user is agent or admin
+  useEffect(() => {
+    handleFetchTickets(1);
+  }, [debouncedSearchQuery, statusFilter, priorityFilter, categoryFilter]);
+  const handleFetchTickets = (pageNumber: number) => {
+    setPage(pageNumber);
+    dispatch(
+      getAllTickets({
+        page: pageNumber,
+        limit: pageSize,
+        search: debouncedSearchQuery,
+        status: statusFilter,
+        priority: priorityFilter,
+        category: categoryFilter,
+      })
+    );
+  };
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setPage(1);
+  };
+  const handleStatusFilterChange = (e: any) => {
+    const value = e.target.value;
+    setStatusFilter(value);
+    setPage(1);
+  };
+  const handlePriorityFilterChange = (e: any) => {
+    const value = e.target.value;
+    setPriorityFilter(value);
+    setPage(1);
+  };
+  const handleCategoryFilterChange = (e: any) => {
+    const value = e.target.value;
+    setCategoryFilter(value);
+    setPage(1);
+  };
+  const handlePageChange = (pageNumber: number) => {
+    handleFetchTickets(pageNumber);
+  };
+
   const isAgentOrAdmin =
     user.user?.role === "agent" || user.user?.role === "admin";
-
-  // Validation schema for edit mode (agent/admin)
   const editValidationSchema = Yup.object({
     commentText: Yup.string()
       .trim()
@@ -73,8 +125,6 @@ const Tickets: React.FC = () => {
       .oneOf(["open", "in progress", "resolved", "closed"], "Invalid status")
       .required("Status is required"),
   });
-
-  // Validation schema for create mode
   const createValidationSchema = Yup.object({
     name: Yup.string()
       .trim()
@@ -91,12 +141,9 @@ const Tickets: React.FC = () => {
       .oneOf(["low", "medium", "high"], "Invalid priority level")
       .required("Priority is required"),
   });
-
-  // Conditional validation schema
   const validationSchema = isEditMode
     ? editValidationSchema
     : createValidationSchema;
-
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -112,7 +159,6 @@ const Tickets: React.FC = () => {
     onSubmit: async (values, { resetForm, setSubmitting }) => {
       try {
         if (isEditMode && editingTicket) {
-          // Update ticket with comment and status (agent/admin)
           const result = await dispatch(
             addAgentComment({
               id: editingTicket._id,
@@ -121,15 +167,12 @@ const Tickets: React.FC = () => {
             })
           );
 
-          // FIX: Check for the correct action type
           if (addAgentComment.fulfilled.match(result)) {
-            console.log("Ticket updated successfully");
             resetForm();
             handleClose();
-            dispatch(getAllTickets()); // Refresh the list
+            handleFetchTickets(page);
           }
         } else {
-          // Create new ticket
           const formData = new FormData();
           formData.append("name", values.name.trim());
           formData.append("description", values.description.trim());
@@ -141,7 +184,7 @@ const Tickets: React.FC = () => {
           if (createTicket.fulfilled.match(result)) {
             resetForm();
             handleClose();
-            dispatch(getAllTickets());
+            handleFetchTickets(1);
           }
         }
       } catch (error) {
@@ -161,8 +204,6 @@ const Tickets: React.FC = () => {
   const handleEdit = (ticket: any) => {
     setIsEditMode(true);
     setEditingTicket(ticket);
-
-    // Set form values for editing - only status and comment are editable
     formik.setValues({
       name: ticket.name,
       description: ticket.description,
@@ -183,7 +224,7 @@ const Tickets: React.FC = () => {
     setIsEditMode(false);
     setEditingTicket(null);
     formik.resetForm();
-    dispatch(clearError()); // Clear any existing errors
+    dispatch(clearError());
   };
 
   const getStatusColor = (
@@ -243,8 +284,10 @@ const Tickets: React.FC = () => {
         }}
       >
         <Typography variant="h5">Tickets</Typography>
+        <Button variant="contained" onClick={handleOpen} disabled={isLoading}>
+          Create Ticket
+        </Button>
       </Box>
-
       {error && (
         <Alert
           severity="error"
@@ -254,6 +297,61 @@ const Tickets: React.FC = () => {
           {error}
         </Alert>
       )}
+      <Box sx={{ mb: 3, display: "flex", gap: 2, flexWrap: "wrap" }}>
+        <TextField
+          placeholder="Search by title or description..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          disabled={isLoading}
+          size="small"
+          sx={{ minWidth: 250 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={statusFilter}
+            onChange={handleStatusFilterChange}
+            label="Status"
+            disabled={isLoading}
+          >
+            <MenuItem value="">All Status</MenuItem>
+            <MenuItem value="open">Open</MenuItem>
+            <MenuItem value="in progress">In Progress</MenuItem>
+            <MenuItem value="resolved">Resolved</MenuItem>
+            <MenuItem value="closed">Closed</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Priority</InputLabel>
+          <Select
+            value={priorityFilter}
+            onChange={handlePriorityFilterChange}
+            label="Priority"
+            disabled={isLoading}
+          >
+            <MenuItem value="">All Priority</MenuItem>
+            <MenuItem value="low">Low</MenuItem>
+            <MenuItem value="medium">Medium</MenuItem>
+            <MenuItem value="high">High</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Category</InputLabel>
+          <Select
+            value={categoryFilter}
+            onChange={handleCategoryFilterChange}
+            label="Category"
+            disabled={isLoading}
+          >
+            <MenuItem value="">All Categories</MenuItem>
+            {activeCategories.map((category: any) => (
+              <MenuItem key={category._id} value={category._id}>
+                {category.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
 
       <TableContainer component={Paper}>
         <Table>
@@ -272,21 +370,21 @@ const Tickets: React.FC = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: "center", py: 4 }}>
+                <TableCell colSpan={8} sx={{ textAlign: "center", py: 4 }}>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : tickets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: "center", py: 4 }}>
+                <TableCell colSpan={8} sx={{ textAlign: "center", py: 4 }}>
                   No tickets found
                 </TableCell>
               </TableRow>
             ) : (
               tickets.map((ticket: any) => (
                 <TableRow key={ticket._id} hover>
-                  <TableCell>#{ticket._id.slice(0, 5)}</TableCell>
-                  <TableCell>{ticket.createdBy.name}</TableCell>
+                  <TableCell>#{ticket._id.slice(-8)}</TableCell>
+                  <TableCell>{ticket.createdBy?.name || "N/A"}</TableCell>
                   <TableCell>{ticket.name}</TableCell>
                   <TableCell>
                     {typeof ticket.category === "string"
@@ -340,14 +438,21 @@ const Tickets: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalCount={totalRecords}
+        pageSize={pageSize}
+        isLoading={isLoading}
+        onPageChange={handlePageChange}
+        showRecordsInfo={true}
+        showPageInfo={true}
+      />
 
-      {/* CREATE/EDIT TICKET DIALOG */}
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle sx={{ pb: 0 }}>
           {isEditMode ? "Update Ticket" : "Create New Ticket"}
         </DialogTitle>
-
-        {/* FIX: Use Box instead of Typography for subtitle to avoid heading hierarchy issue */}
         <Box sx={{ px: 3, pt: 0, pb: 1 }}>
           {isEditMode && editingTicket && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -355,11 +460,9 @@ const Tickets: React.FC = () => {
             </Typography>
           )}
         </Box>
-
         <DialogContent sx={{ pt: 0 }}>
           <Box component="form" onSubmit={formik.handleSubmit} noValidate>
             <Stack spacing={3}>
-              {/* Title Field - Disabled in edit mode */}
               <TextField
                 fullWidth
                 label="Title *"
@@ -372,8 +475,6 @@ const Tickets: React.FC = () => {
                 placeholder="Enter a descriptive title for your issue"
                 disabled={isEditMode}
               />
-
-              {/* Description Field - Disabled in edit mode */}
               <TextField
                 fullWidth
                 label="Description *"
@@ -393,8 +494,6 @@ const Tickets: React.FC = () => {
                 placeholder="Please provide detailed information about your issue..."
                 disabled={isEditMode}
               />
-
-              {/* Category Field - Disabled in edit mode */}
               <FormControl fullWidth disabled={isEditMode}>
                 <InputLabel>Category *</InputLabel>
                 <Select
@@ -422,8 +521,6 @@ const Tickets: React.FC = () => {
                   </Typography>
                 )}
               </FormControl>
-
-              {/* Priority Field - Disabled in edit mode */}
               <FormControl
                 fullWidth
                 error={
@@ -449,8 +546,6 @@ const Tickets: React.FC = () => {
                   </Typography>
                 )}
               </FormControl>
-
-              {/* Status Field - Only visible in edit mode for agents/admins */}
               {isEditMode && (
                 <FormControl fullWidth>
                   <InputLabel>Update Status *</InputLabel>
@@ -487,8 +582,6 @@ const Tickets: React.FC = () => {
                   </Typography>
                 </FormControl>
               )}
-
-              {/* Comment Field - Required in edit mode, optional in create mode */}
               <TextField
                 fullWidth
                 label={
@@ -515,8 +608,6 @@ const Tickets: React.FC = () => {
                     : "Any additional comments or information..."
                 }
               />
-
-              {/* Show previous comments in edit mode */}
               {isEditMode &&
                 editingTicket?.agentComments &&
                 editingTicket.agentComments.length > 0 && (

@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from "react";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  MenuItem,
   Alert,
+  Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
   Stack,
+  TextField,
 } from "@mui/material";
-import { useAppDispatch } from "../hooks";
-import { updateUser, type User } from "../store/slices/userSlice";
-import { register, type RegisterPayload } from "../store/slices/authSlice";
 import { useFormik } from "formik";
-import * as Yup from "yup";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import * as Yup from "yup";
+import { useAppDispatch } from "../hooks";
+import { register, type RegisterPayload } from "../store/slices/authSlice";
+import { updateUser, type User } from "../store/slices/userSlice";
 
 interface AddEditUserDialogProps {
   open: boolean;

@@ -1,25 +1,25 @@
-import React from "react";
-import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
-  Container,
-  TextField,
   Button,
-  Typography,
   Card,
   CircularProgress,
-  Stack,
+  Container,
   MenuItem,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
+import { useFormik } from "formik";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import * as Yup from "yup";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import {
-  register,
   clearError,
+  register,
   type RegisterPayload,
 } from "../store/slices/authSlice";
-import { useFormik } from "formik";
-import * as Yup from "yup";
-import { toast } from "react-toastify";
 
 const Register: React.FC = () => {
   const dispatch = useAppDispatch();

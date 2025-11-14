@@ -1,47 +1,105 @@
-import React, { useEffect, useState } from "react";
 import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  ToggleOff as ToggleOffIcon,
+  ToggleOn as ToggleOnIcon,
+} from "@mui/icons-material";
+import {
+  Alert,
+  Box,
+  Chip,
+  CircularProgress,
   Container,
+  FormControl,
   IconButton,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Chip,
-  CircularProgress,
-  Alert,
-  Box,
-  Typography,
+  TextField,
   Tooltip,
+  Typography,
 } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import {
-  getAllUsers,
   clearError,
+  getAllUsers,
   toggleUserStatus,
 } from "../store/slices/userSlice";
-import {
-  ToggleOn as ToggleOnIcon,
-  ToggleOff as ToggleOffIcon,
-  Edit as EditIcon,
-  Add as AddIcon,
-} from "@mui/icons-material";
+import { useDebounce } from "../utils/useDebounce";
 import AddEditUserDialog from "./AddEditUserDialog";
-import { toast } from "react-toastify";
+import Pagination from "./Pagination";
 
 const Users: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { users, isLoading, error } = useAppSelector((state) => state.user);
+  const {
+    users,
+    isLoading,
+    error,
+    totalPages,
+    pageSize = 5,
+    totalRecords,
+  } = useAppSelector((state) => state.user);
   const { user: currentUser } = useAppSelector((state) => state.auth);
 
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<boolean | null>(null);
+
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   useEffect(() => {
-    dispatch(getAllUsers(1));
+    handleFetchUsers(1);
   }, [dispatch]);
+
+  useEffect(() => {
+    handleFetchUsers(1);
+  }, [debouncedSearchQuery, roleFilter, statusFilter]);
+
+  const handleFetchUsers = (pageNumber: number) => {
+    setPage(pageNumber);
+    dispatch(
+      getAllUsers({
+        page: pageNumber,
+        limit: pageSize,
+        search: debouncedSearchQuery,
+        role: roleFilter,
+        isActive: statusFilter,
+      })
+    );
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setPage(1);
+  };
+
+  const handleRoleFilterChange = (e: any) => {
+    const value = e.target.value;
+    setRoleFilter(value);
+    setPage(1);
+  };
+  const handlePageChange = (pageNumber: number) => {
+    handleFetchUsers(pageNumber);
+  };
+  const handleStatusFilterChange = (e: any) => {
+    const value = e.target.value;
+    const filterValue = value === "" ? null : value === "true";
+    setStatusFilter(filterValue);
+    setPage(1);
+  };
 
   const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
     const result = await dispatch(
@@ -57,7 +115,7 @@ const Users: React.FC = () => {
           !currentStatus ? "activated" : "deactivated"
         } successfully`
       );
-      dispatch(getAllUsers(1));
+      handleFetchUsers(page);
     }
   };
 
@@ -77,8 +135,7 @@ const Users: React.FC = () => {
   };
 
   const handleUserUpdated = () => {
-    // Refresh the users list after update
-    dispatch(getAllUsers(1));
+    handleFetchUsers(page);
   };
 
   const getRoleColor = (role: string) => {
@@ -109,30 +166,25 @@ const Users: React.FC = () => {
         }}
       >
         <Typography variant="h5">Users Management</Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Total Users: {users.length}
-          </Typography>
-          <Tooltip title="Add New User">
-            <IconButton
-              color="primary"
-              onClick={handleAddClick}
-              disabled={isLoading}
-              sx={{
-                backgroundColor: "primary.main",
-                color: "white",
-                "&:hover": {
-                  backgroundColor: "primary.dark",
-                },
-                "&:disabled": {
-                  backgroundColor: "action.disabled",
-                },
-              }}
-            >
-              <AddIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        <Tooltip title="Add New User">
+          <IconButton
+            color="primary"
+            onClick={handleAddClick}
+            disabled={isLoading}
+            sx={{
+              backgroundColor: "primary.main",
+              color: "white",
+              "&:hover": {
+                backgroundColor: "primary.dark",
+              },
+              "&:disabled": {
+                backgroundColor: "action.disabled",
+              },
+            }}
+          >
+            <AddIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       {error && (
@@ -144,7 +196,43 @@ const Users: React.FC = () => {
           {error}
         </Alert>
       )}
-
+      <Box sx={{ mb: 3, display: "flex", gap: 2, flexWrap: "wrap" }}>
+        <TextField
+          placeholder="Search by name or email..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          disabled={isLoading}
+          size="small"
+          sx={{ minWidth: 250 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Role</InputLabel>
+          <Select
+            value={roleFilter}
+            onChange={handleRoleFilterChange}
+            label="Role"
+            disabled={isLoading}
+          >
+            <MenuItem value="">All Roles</MenuItem>
+            <MenuItem value="admin">Admin</MenuItem>
+            <MenuItem value="agent">Agent</MenuItem>
+            <MenuItem value="customer">Customer</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={statusFilter === null ? "" : statusFilter.toString()}
+            onChange={handleStatusFilterChange}
+            label="Status"
+            disabled={isLoading}
+          >
+            <MenuItem value="">All Status</MenuItem>
+            <MenuItem value="true">Active</MenuItem>
+            <MenuItem value="false">Inactive</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
       <TableContainer component={Paper}>
         <Table>
           <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
@@ -203,7 +291,6 @@ const Users: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      {/* Edit Button */}
                       <Tooltip title="Edit user">
                         <IconButton
                           size="small"
@@ -215,7 +302,6 @@ const Users: React.FC = () => {
                         </IconButton>
                       </Tooltip>
 
-                      {/* Toggle Status Button */}
                       <Tooltip
                         title={
                           user.isActive ? "Deactivate user" : "Activate user"
@@ -262,6 +348,16 @@ const Users: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalCount={totalRecords}
+        pageSize={pageSize}
+        isLoading={isLoading}
+        onPageChange={handlePageChange}
+        showRecordsInfo={true}
+        showPageInfo={true}
+      />
       <AddEditUserDialog
         open={userModalOpen}
         onClose={handleModalClose}

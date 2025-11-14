@@ -1,20 +1,20 @@
-import type React from "react";
 import {
   Box,
-  Container,
-  TextField,
   Button,
-  Typography,
   Card,
   CircularProgress,
+  Container,
   Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
-import { useNavigate, Link } from "react-router-dom";
+import { useFormik } from "formik";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import * as Yup from "yup";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import { login } from "../store/slices/authSlice";
-import { useFormik } from "formik";
-import * as Yup from "yup";
-import { toast } from "react-toastify";
 import { ROLES } from "../types";
 
 const Login: React.FC = () => {
@@ -31,7 +31,6 @@ const Login: React.FC = () => {
       .required("Password is required"),
   });
 
-  // Function to determine redirect path based on user role
   const getRedirectPath = (role: string) => {
     switch (role) {
       case ROLES.CUSTOMER:
@@ -57,10 +56,8 @@ const Login: React.FC = () => {
         toast.success("Login successful!");
         resetForm();
 
-        // Get user role from the response
         const userRole = result.payload.user.role;
 
-        // Determine redirect path based on role
         const redirectPath = getRedirectPath(userRole);
         navigate(redirectPath);
       } else if (login.rejected.match(result)) {

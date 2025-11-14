@@ -1,15 +1,22 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosInstance from "../../api/axiosInstance";
 import { CATEGORY_ENDPOINTS } from "../../api/endpoints";
-import type { Category, ApiResponse } from "../../types";
+import type { ApiResponse, Category } from "../../types";
 
 interface CategoryState {
   categories: Category[];
   activeCategories: Category[];
   isLoading: boolean;
   error: string | null;
+  totalRecords: number;
+  totalPages: number;
 }
-
+export interface PaginationParams {
+  page: number;
+  limit: number;
+  search?: string;
+  isActive?: boolean | null;
+}
 interface CreateCategoryPayload {
   name: string;
 }
@@ -38,12 +45,33 @@ export const createCategory = createAsyncThunk(
 
 export const getAllCategories = createAsyncThunk(
   "category/getAll",
-  async (_, { rejectWithValue }) => {
+  async (params: PaginationParams, { rejectWithValue }) => {
     try {
+      const queryParams = new URLSearchParams();
+      queryParams.append("page", params.page.toString());
+      queryParams.append("limit", params.limit.toString());
+
+      if (params.search && params.search.trim()) {
+        queryParams.append("search", params.search.trim());
+      }
+
+      if (params.isActive !== null && params.isActive !== undefined) {
+        queryParams.append("isActive", params.isActive.toString());
+      }
+
       const response = await axiosInstance.get<
-        ApiResponse<{ data: Category[] }>
-      >(CATEGORY_ENDPOINTS.GET_ALL);
-      return response.data.data;
+        ApiResponse<{
+          currentPage: number;
+          data: Category[];
+          totalPages: number;
+          totalRecords: number;
+        }>
+      >(`${CATEGORY_ENDPOINTS.GET_ALL}?${queryParams.toString()}`);
+      return {
+        categories: response.data.data?.data || [],
+        totalPages: response.data.data?.totalPages || 1,
+        totalRecords: response.data.data?.totalRecords || 0,
+      };
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch categories"
@@ -111,6 +139,8 @@ const initialState: CategoryState = {
   categories: [],
   activeCategories: [],
   isLoading: false,
+  totalRecords: 0,
+  totalPages: 0,
   error: null,
 };
 
@@ -130,7 +160,9 @@ const categorySlice = createSlice({
       })
       .addCase(getAllCategories.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.categories = action.payload?.data || [];
+        state.categories = action.payload?.categories || [];
+        state.totalPages = action.payload?.totalPages || 0;
+        state.totalRecords = action.payload?.totalRecords || 0;
       })
       .addCase(getAllCategories.rejected, (state, action) => {
         state.isLoading = false;

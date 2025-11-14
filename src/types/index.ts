@@ -1,4 +1,3 @@
-// Types for the application
 export interface User {
   _id: string;
   name: string;
@@ -61,7 +60,6 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
-// src/constants/roles.ts
 export enum ROLES {
   ADMIN = "admin",
   AGENT = "agent",
