@@ -146,7 +146,12 @@ export const updateTicket = createAsyncThunk(
 export const addAgentComment = createAsyncThunk(
   "ticket/addComment",
   async (
-    payload: { id: string; commentText: string; status: string },
+    payload: {
+      id: string;
+      commentText: string;
+      status: string;
+      assignedAgent: string;
+    },
     { rejectWithValue }
   ) => {
     try {
@@ -155,6 +160,7 @@ export const addAgentComment = createAsyncThunk(
         {
           commentText: payload.commentText,
           status: payload.status,
+          assignedAgent: payload.assignedAgent,
         }
       );
       return response.data.data;

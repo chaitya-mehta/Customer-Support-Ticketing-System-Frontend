@@ -350,13 +350,30 @@ const Dashboard: React.FC = () => {
         <Table>
           <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }}>Title</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Category</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Priority</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Assigned Agent</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Created</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
+              <TableCell width={100} sx={{ fontWeight: "bold" }}>
+                TicketId
+              </TableCell>
+              <TableCell width={250} sx={{ fontWeight: "bold" }}>
+                Title
+              </TableCell>
+              <TableCell width={250} sx={{ fontWeight: "bold" }}>
+                Category
+              </TableCell>
+              <TableCell width={150} sx={{ fontWeight: "bold" }}>
+                Priority
+              </TableCell>
+              <TableCell width={300} sx={{ fontWeight: "bold" }}>
+                Assigned Agent
+              </TableCell>
+              <TableCell width={150} sx={{ fontWeight: "bold" }}>
+                Status
+              </TableCell>
+              <TableCell width={150} sx={{ fontWeight: "bold" }}>
+                Created
+              </TableCell>
+              <TableCell width={100} sx={{ fontWeight: "bold" }}>
+                Action
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -378,6 +395,9 @@ const Dashboard: React.FC = () => {
             ) : (
               tickets.map((ticket: any) => (
                 <TableRow key={ticket._id} hover>
+                  <TableCell>
+                    #{String(ticket._id).slice(-8).toUpperCase()}
+                  </TableCell>
                   <TableCell>{ticket.name}</TableCell>
                   <TableCell>
                     {typeof ticket.category === "string"
@@ -392,15 +412,8 @@ const Dashboard: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      label={ticket.status}
-                      color={getStatusColor(ticket.status)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
                     {ticket.assignedAgent ? (
-                      <Typography >
+                      <Typography>
                         {typeof ticket.assignedAgent === "string"
                           ? ticket.assignedAgent
                           : ticket.assignedAgent.name}
@@ -410,6 +423,13 @@ const Dashboard: React.FC = () => {
                         Not Assigned Yet
                       </Typography>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={ticket.status}
+                      color={getStatusColor(ticket.status)}
+                      size="small"
+                    />
                   </TableCell>
                   <TableCell>
                     {new Date(ticket.createdAt).toLocaleDateString()}

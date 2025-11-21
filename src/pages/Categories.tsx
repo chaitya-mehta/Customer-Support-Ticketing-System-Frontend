@@ -279,10 +279,18 @@ const Categories: React.FC = () => {
         <Table>
           <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Created</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
+              <TableCell width={300} sx={{ fontWeight: "bold" }}>
+                Name
+              </TableCell>
+              <TableCell width={200} sx={{ fontWeight: "bold" }}>
+                Status
+              </TableCell>
+              <TableCell width={250} sx={{ fontWeight: "bold" }}>
+                Created
+              </TableCell>
+              <TableCell width={250} sx={{ fontWeight: "bold" }}>
+                Actions
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -297,7 +305,10 @@ const Categories: React.FC = () => {
               </TableRow>
             ) : categories.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} sx={{ textAlign: "center", py: 4 }}>
+                <TableCell
+                  colSpan={4}
+                  sx={{ textAlign: "center", py: 4, fontWeight: "bold" }}
+                >
                   No categories found
                 </TableCell>
               </TableRow>

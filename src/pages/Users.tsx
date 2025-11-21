@@ -237,12 +237,24 @@ const Users: React.FC = () => {
         <Table>
           <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Email</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Role</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Created</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
+              <TableCell width={200} sx={{ fontWeight: "bold" }}>
+                Name
+              </TableCell>
+              <TableCell width={300} sx={{ fontWeight: "bold" }}>
+                Email
+              </TableCell>
+              <TableCell width={250} sx={{ fontWeight: "bold" }}>
+                Role
+              </TableCell>
+              <TableCell width={200} sx={{ fontWeight: "bold" }}>
+                Status
+              </TableCell>
+              <TableCell width={200} sx={{ fontWeight: "bold" }}>
+                Created
+              </TableCell>
+              <TableCell width={150} sx={{ fontWeight: "bold" }}>
+                Actions
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

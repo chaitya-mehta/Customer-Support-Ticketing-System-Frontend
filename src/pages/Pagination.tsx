@@ -112,7 +112,7 @@ const Pagination: React.FC<PaginationProps> = ({
         </Typography>
       )}
 
-      {totalPages > 1 ? (
+      {totalPages > 1 && (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Tooltip title="First Page">
             <span>
@@ -197,14 +197,6 @@ const Pagination: React.FC<PaginationProps> = ({
             </span>
           </Tooltip>
         </Box>
-      ) : (
-        showPageInfo && (
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Typography variant="body2" color="text.secondary">
-              Page 1 of 1
-            </Typography>
-          </Box>
-        )
       )}
 
       {showPageInfo && (

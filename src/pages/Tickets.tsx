@@ -38,7 +38,6 @@ import { getActiveCategories } from "../store/slices/categorySlice";
 import {
   addAgentComment,
   clearError,
-  createTicket,
   getAllTickets,
 } from "../store/slices/ticketSlice";
 import { useDebounce } from "../utils/useDebounce";
@@ -47,6 +46,7 @@ import Pagination from "./Pagination";
 import { initSocket, getSocket } from "../services/socket";
 import { socket } from "../utils/socket";
 import { useNotifications } from "../context/NotificationContext";
+import { getAgents } from "../store/slices/userSlice";
 
 const Tickets: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -60,6 +60,7 @@ const Tickets: React.FC = () => {
     totalRecords = 0,
   } = useAppSelector((state) => state.ticket);
   const { activeCategories = [] } = useAppSelector((state) => state.category);
+  const activeAgents = useAppSelector((state) => state.user.agents);
   const { user } = useAppSelector((state) => state.auth);
   const [open, setOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -71,7 +72,7 @@ const Tickets: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [connected, setConnected] = useState(false);
-
+  // const userData = JSON.parse(localStorage.getItem("user") || "null");
   // const [snackbarOpen, setSnackbarOpen] = useState(false);
   // const [snackbarMessage, setSnackbarMessage] = useState("");
   // const [socketConnected, setSocketConnected] = useState(false);
@@ -103,6 +104,7 @@ const Tickets: React.FC = () => {
   useEffect(() => {
     handleFetchTickets(1);
     dispatch(getActiveCategories());
+    dispatch(getAgents());
   }, [dispatch]);
 
   useEffect(() => {
@@ -149,26 +151,9 @@ const Tickets: React.FC = () => {
     status: Yup.string()
       .oneOf(["open", "in progress", "resolved", "closed"], "Invalid status")
       .required("Status is required"),
+    assignedAgent: Yup.string().required("Agent assignment is required"),
   });
-  const createValidationSchema = Yup.object({
-    name: Yup.string()
-      .trim()
-      .required("Title is required")
-      .min(5, "Title must be at least 5 characters")
-      .max(100, "Title must not exceed 100 characters"),
-    description: Yup.string()
-      .trim()
-      .required("Description is required")
-      .min(10, "Description must be at least 10 characters")
-      .max(1000, "Description must not exceed 1000 characters"),
-    category: Yup.string().required("Category is required"),
-    priority: Yup.string()
-      .oneOf(["low", "medium", "high"], "Invalid priority level")
-      .required("Priority is required"),
-  });
-  const validationSchema = isEditMode
-    ? editValidationSchema
-    : createValidationSchema;
+  const validationSchema = isEditMode && editValidationSchema;
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -177,6 +162,7 @@ const Tickets: React.FC = () => {
       priority: "medium" as "low" | "medium" | "high",
       commentText: "",
       status: "open" as "open" | "in progress" | "resolved" | "closed",
+      assignedAgent: "",
     },
     validationSchema,
     validateOnChange: true,
@@ -189,6 +175,7 @@ const Tickets: React.FC = () => {
               id: editingTicket._id,
               commentText: values.commentText.trim(),
               status: values.status,
+              assignedAgent: values.assignedAgent,
             })
           );
 
@@ -196,22 +183,6 @@ const Tickets: React.FC = () => {
             resetForm();
             handleClose();
             handleFetchTickets(page);
-          }
-        } else {
-          const formData = new FormData();
-          formData.append("name", values.name.trim());
-          formData.append("description", values.description.trim());
-          formData.append("category", values.category);
-          formData.append("priority", values.priority);
-
-          const result = await dispatch(createTicket(formData));
-
-          if (createTicket.fulfilled.match(result)) {
-            resetForm();
-            handleClose();
-            handleFetchTickets(1);
-            // setSnackbarMessage("Ticket created");
-            // setSnackbarOpen(true);
           }
         }
       } catch (error) {
@@ -221,12 +192,6 @@ const Tickets: React.FC = () => {
       }
     },
   });
-
-  const handleOpen = () => {
-    setIsEditMode(false);
-    setEditingTicket(null);
-    setOpen(true);
-  };
 
   const handleEdit = (ticket: any) => {
     setIsEditMode(true);
@@ -241,6 +206,7 @@ const Tickets: React.FC = () => {
       priority: ticket.priority,
       commentText: "",
       status: ticket.status,
+      assignedAgent: ticket.assignedAgent?._id || "",
     });
     setOpen(true);
   };
@@ -406,9 +372,6 @@ const Tickets: React.FC = () => {
         }}
       >
         <Typography variant="h5">Tickets</Typography>
-        <Button variant="contained" onClick={handleOpen} disabled={isLoading}>
-          Create Ticket
-        </Button>
       </Box>
       {error && (
         <Alert
@@ -479,14 +442,33 @@ const Tickets: React.FC = () => {
         <Table>
           <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }}>TicketId</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Createdby</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Title</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Category</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Priority</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Created</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Action</TableCell>
+              <TableCell width={100} sx={{ fontWeight: "bold" }}>
+                TicketId
+              </TableCell>
+              <TableCell width={250} sx={{ fontWeight: "bold" }}>
+                Createdby
+              </TableCell>
+              <TableCell width={300} sx={{ fontWeight: "bold" }}>
+                Title
+              </TableCell>
+              <TableCell width={250} sx={{ fontWeight: "bold" }}>
+                Category
+              </TableCell>
+              <TableCell width={100} sx={{ fontWeight: "bold" }}>
+                Priority
+              </TableCell>
+              <TableCell width={300} sx={{ fontWeight: "bold" }}>
+                Assigned Agent
+              </TableCell>
+              <TableCell width={100} sx={{ fontWeight: "bold" }}>
+                Status
+              </TableCell>
+              <TableCell width={100} sx={{ fontWeight: "bold" }}>
+                Created
+              </TableCell>
+              <TableCell width={100} sx={{ fontWeight: "bold" }}>
+                Action
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -498,14 +480,19 @@ const Tickets: React.FC = () => {
               </TableRow>
             ) : tickets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} sx={{ textAlign: "center", py: 4 , fontWeight: "bold" }}>
+                <TableCell
+                  colSpan={8}
+                  sx={{ textAlign: "center", py: 4, fontWeight: "bold" }}
+                >
                   No tickets found
                 </TableCell>
               </TableRow>
             ) : (
               tickets.map((ticket: any) => (
                 <TableRow key={ticket._id} hover>
-                  <TableCell>#{String(ticket._id).slice(-8)}</TableCell>
+                  <TableCell>
+                    #{String(ticket._id).slice(-8).toUpperCase()}
+                  </TableCell>
                   <TableCell>{ticket.createdBy?.name || "N/A"}</TableCell>
                   <TableCell>{ticket.name}</TableCell>
                   <TableCell>
@@ -519,6 +506,19 @@ const Tickets: React.FC = () => {
                       color={getPriorityColor(ticket.priority)}
                       size="small"
                     />
+                  </TableCell>
+                  <TableCell>
+                    {ticket.assignedAgent ? (
+                      <Typography>
+                        {typeof ticket.assignedAgent === "string"
+                          ? ticket.assignedAgent
+                          : ticket.assignedAgent.name}
+                      </Typography>
+                    ) : (
+                      <Typography sx={{ color: "red" }}>
+                        Not Assigned Yet
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Chip
@@ -544,15 +544,21 @@ const Tickets: React.FC = () => {
                         </IconButton>
                       </Tooltip>
                       {isAgentOrAdmin && (
-                        <Tooltip title="Update Ticket">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEdit(ticket)}
-                            color="secondary"
-                          >
-                            <Edit />
-                          </IconButton>
-                        </Tooltip>
+                        <>
+                          {(userData?.role === "admin" ||
+                            (userData?.role === "agent" &&
+                              ticket.assignedAgent?._id === userData?.id)) && (
+                            <Tooltip title="Update Ticket">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleEdit(ticket)}
+                                color="secondary"
+                              >
+                                <Edit />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </>
                       )}
                     </Stack>
                   </TableCell>
@@ -669,6 +675,36 @@ const Tickets: React.FC = () => {
                     {formik.errors.priority}
                   </Typography>
                 )}
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Assigned Agent *</InputLabel>
+                <Select
+                  name="assignedAgent"
+                  label="Assigned Agent *"
+                  value={formik.values.assignedAgent}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={
+                    formik.touched.assignedAgent &&
+                    Boolean(formik.errors.assignedAgent)
+                  }
+                >
+                  <MenuItem value="">Select Agent</MenuItem>
+
+                  {activeAgents.length > 0 &&
+                    activeAgents.map((agent: any) => (
+                      <MenuItem key={agent._id} value={agent._id}>
+                        {agent.name}
+                      </MenuItem>
+                    ))}
+                </Select>
+
+                {formik.touched.assignedAgent &&
+                  formik.errors.assignedAgent && (
+                    <Typography color="error" variant="caption">
+                      {formik.errors.assignedAgent}
+                    </Typography>
+                  )}
               </FormControl>
               {isEditMode && (
                 <FormControl fullWidth>
