@@ -25,10 +25,10 @@ import {
   TableRow,
   TextField,
   Tooltip,
-  Typography
+  Typography,
 } from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import { useFormik } from "formik";
 import { useNavigate } from "react-router-dom";
@@ -44,29 +44,61 @@ import {
 import { useDebounce } from "../utils/useDebounce";
 import Pagination from "./Pagination";
 
+import { initSocket, getSocket } from "../services/socket";
+import { socket } from "../utils/socket";
+import { useNotifications } from "../context/NotificationContext";
+
 const Tickets: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const {
-    tickets,
+    tickets = [],
     isLoading,
     error,
-    totalPages,
+    totalPages = 1,
     pageSize = 2,
-    totalRecords,
+    totalRecords = 0,
   } = useAppSelector((state) => state.ticket);
-  const { activeCategories } = useAppSelector((state) => state.category);
+  const { activeCategories = [] } = useAppSelector((state) => state.category);
   const { user } = useAppSelector((state) => state.auth);
-
   const [open, setOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTicket, setEditingTicket] = useState<any>(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [priorityFilter, setPriorityFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
+  const [connected, setConnected] = useState(false);
+
+  // const [snackbarOpen, setSnackbarOpen] = useState(false);
+  // const [snackbarMessage, setSnackbarMessage] = useState("");
+  // const [socketConnected, setSocketConnected] = useState(false);
+
+  const handleFetchTickets = useCallback(
+    (pageNumber: number) => {
+      setPage(pageNumber);
+      dispatch(
+        getAllTickets({
+          page: pageNumber,
+          limit: pageSize,
+          search: debouncedSearchQuery,
+          status: statusFilter,
+          priority: priorityFilter,
+          category: categoryFilter,
+        })
+      );
+    },
+    [
+      dispatch,
+      pageSize,
+      debouncedSearchQuery,
+      statusFilter,
+      priorityFilter,
+      categoryFilter,
+    ]
+  );
 
   useEffect(() => {
     handleFetchTickets(1);
@@ -75,46 +107,39 @@ const Tickets: React.FC = () => {
 
   useEffect(() => {
     handleFetchTickets(1);
-  }, [debouncedSearchQuery, statusFilter, priorityFilter, categoryFilter]);
-  const handleFetchTickets = (pageNumber: number) => {
-    setPage(pageNumber);
-    dispatch(
-      getAllTickets({
-        page: pageNumber,
-        limit: pageSize,
-        search: debouncedSearchQuery,
-        status: statusFilter,
-        priority: priorityFilter,
-        category: categoryFilter,
-      })
-    );
-  };
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    setPage(1);
-  };
-  const handleStatusFilterChange = (e: any) => {
-    const value = e.target.value;
-    setStatusFilter(value);
-    setPage(1);
-  };
-  const handlePriorityFilterChange = (e: any) => {
-    const value = e.target.value;
-    setPriorityFilter(value);
-    setPage(1);
-  };
-  const handleCategoryFilterChange = (e: any) => {
-    const value = e.target.value;
-    setCategoryFilter(value);
-    setPage(1);
-  };
+  }, [
+    debouncedSearchQuery,
+    statusFilter,
+    priorityFilter,
+    categoryFilter,
+    handleFetchTickets,
+  ]);
   const handlePageChange = (pageNumber: number) => {
     handleFetchTickets(pageNumber);
   };
+  const { notifications } = useNotifications();
+  const [notificationsss, setNotifications] = useState<Notification[]>(
+    notifications || []
+  );
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setPage(1);
+  };
+  const handleStatusFilterChange = (e: any) => {
+    setStatusFilter(e.target.value);
+    setPage(1);
+  };
+  const handlePriorityFilterChange = (e: any) => {
+    setPriorityFilter(e.target.value);
+    setPage(1);
+  };
+  const handleCategoryFilterChange = (e: any) => {
+    setCategoryFilter(e.target.value);
+    setPage(1);
+  };
 
   const isAgentOrAdmin =
-    user.user?.role === "agent" || user.user?.role === "admin";
+    user?.user?.role === "agent" || user?.user?.role === "admin";
   const editValidationSchema = Yup.object({
     commentText: Yup.string()
       .trim()
@@ -153,7 +178,7 @@ const Tickets: React.FC = () => {
       commentText: "",
       status: "open" as "open" | "in progress" | "resolved" | "closed",
     },
-    validationSchema: validationSchema,
+    validationSchema,
     validateOnChange: true,
     validateOnBlur: true,
     onSubmit: async (values, { resetForm, setSubmitting }) => {
@@ -185,6 +210,8 @@ const Tickets: React.FC = () => {
             resetForm();
             handleClose();
             handleFetchTickets(1);
+            // setSnackbarMessage("Ticket created");
+            // setSnackbarOpen(true);
           }
         }
       } catch (error) {
@@ -215,7 +242,6 @@ const Tickets: React.FC = () => {
       commentText: "",
       status: ticket.status,
     });
-
     setOpen(true);
   };
 
@@ -226,7 +252,13 @@ const Tickets: React.FC = () => {
     formik.resetForm();
     dispatch(clearError());
   };
-
+  interface Notification {
+    _id: string;
+    type: string;
+    payload: any;
+    read: boolean;
+    createdAt: string;
+  }
   const getStatusColor = (
     status: string
   ):
@@ -273,6 +305,96 @@ const Tickets: React.FC = () => {
     }
   };
 
+  // ---------------------------
+  // Socket: init & listeners
+  // ---------------------------
+  // useEffect(() => {
+  //   // Only init socket if user is present (to provide userId token)
+  //   const currentUserId = user?.user?._id ?? null;
+  //   const token = user?.token ?? undefined;
+
+  //   if (!currentUserId) return undefined;
+
+  //   const socket = initSocket(currentUserId, token);
+
+  //   function handleNotification(n: any) {
+  //     if (!n) return;
+  //     // support different types
+  //     if (n.type === "ticket.created") {
+  //       setSnackbarMessage("New ticket created");
+  //       setSnackbarOpen(true);
+  //       // bring fresh data (page 1)
+  //       handleFetchTickets(1);
+  //     } else if (
+  //       n.type === "ticket.updated" ||
+  //       n.type === "ticket.status.updated"
+  //     ) {
+  //       setSnackbarMessage("Ticket updated");
+  //       setSnackbarOpen(true);
+  //       // refresh current page (or smart update)
+  //       handleFetchTickets(page);
+  //     } else {
+  //       // generic notification
+  //       setSnackbarMessage(n.payload?.message || "Notification received");
+  //       setSnackbarOpen(true);
+  //     }
+  //   }
+  //   socket.on("connect", () => {
+  //     console.log("Socket connected");
+  //   });
+
+  //   socket.on("new-notification", handleNotification);
+
+  //   socket.on("disconnect", () => {
+  //     console.log("Socket disconnected");
+  //   });
+
+  //   socket.on("error", (error) => {
+  //     console.error("Socket error:", error);
+  //   });
+
+  //   // cleanup - this runs when component unmounts or dependencies change
+  //   return () => {
+  //     console.log("Cleaning up socket connection");
+
+  //     // Remove all event listeners
+  //     socket.off("connect");
+  //     socket.off("new-notification", handleNotification);
+  //     socket.off("disconnect");
+  //     socket.off("error");
+
+  //     // Disconnect the socket
+  //     if (socket.connected) {
+  //       socket.disconnect();
+  //     }
+  //   };
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [user?.user?._id, page]); // re-run if user changes or page changes
+  const userData = JSON.parse(localStorage.getItem("user")!);
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("user?.user?.id:", userData?.id);
+      socket.emit("join-user-room", userData?.id);
+      setConnected(true);
+    });
+    socket.on("connect1", (data) => {
+      console.log("user?.user?.id:", userData?.id);
+      socket.emit("join-user-room", userData?.id);
+      console.log("Received initial data:", data);
+    });
+    socket.on("disconnect", () => {
+      setConnected(false);
+    });
+    socket.on("new-notification", (data: Notification) => {
+      console.log("Received notification:", data);
+      setNotifications((notifications) => [data, ...notifications]);
+    });
+    return () => {
+      socket.off("connect");
+      socket.off("connect1");
+      socket.off("disconnect");
+    };
+  }, []);
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box
@@ -376,14 +498,14 @@ const Tickets: React.FC = () => {
               </TableRow>
             ) : tickets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} sx={{ textAlign: "center", py: 4 }}>
+                <TableCell colSpan={8} sx={{ textAlign: "center", py: 4 , fontWeight: "bold" }}>
                   No tickets found
                 </TableCell>
               </TableRow>
             ) : (
               tickets.map((ticket: any) => (
                 <TableRow key={ticket._id} hover>
-                  <TableCell>#{ticket._id.slice(-8)}</TableCell>
+                  <TableCell>#{String(ticket._id).slice(-8)}</TableCell>
                   <TableCell>{ticket.createdBy?.name || "N/A"}</TableCell>
                   <TableCell>{ticket.name}</TableCell>
                   <TableCell>
@@ -406,7 +528,9 @@ const Tickets: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    {new Date(ticket.createdAt).toLocaleDateString()}
+                    {ticket.createdAt
+                      ? new Date(ticket.createdAt).toLocaleDateString()
+                      : "-"}
                   </TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1}>
@@ -456,7 +580,7 @@ const Tickets: React.FC = () => {
         <Box sx={{ px: 3, pt: 0, pb: 1 }}>
           {isEditMode && editingTicket && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              #{editingTicket._id.slice(-8)} - {editingTicket.name}
+              #{String(editingTicket._id).slice(-8)} - {editingTicket.name}
             </Typography>
           )}
         </Box>
@@ -652,9 +776,11 @@ const Tickets: React.FC = () => {
                               variant="caption"
                               color="text.secondary"
                             >
-                              {new Date(
-                                comment.commentedAt
-                              ).toLocaleDateString()}{" "}
+                              {comment.commentedAt
+                                ? new Date(
+                                    comment.commentedAt
+                                  ).toLocaleDateString()
+                                : ""}{" "}
                               •
                               {comment.statusChange &&
                                 ` Status: ${comment.statusChange.from} → ${comment.statusChange.to}`}

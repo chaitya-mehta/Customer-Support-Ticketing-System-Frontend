@@ -22,8 +22,16 @@ interface PaginationParams {
   role?: string;
   isActive?: boolean | null;
 }
+interface Agent {
+  _id: string;
+  name: string;
+  email: string;
+  role: "agent";
+  isActive: boolean;
+}
 interface UserState {
   users: User[];
+  agents: Agent[];
   isLoading: boolean;
   error: string | null;
   currentPage: number;
@@ -33,6 +41,7 @@ interface UserState {
 
 const initialState: UserState = {
   users: [],
+  agents: [],
   isLoading: false,
   error: null,
   currentPage: 1,
@@ -45,6 +54,7 @@ const USER_ENDPOINTS = {
   GET_ALL: "/users",
   TOGGLE_STATUS: (id: string) => `/users/${id}/status`,
   UPDATE: (id: string) => `/users/${id}`,
+  GET_AGENT_LIST: "/users/agent-list",
 };
 
 export const getAllUsers = createAsyncThunk(
@@ -81,6 +91,21 @@ export const getAllUsers = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch users"
+      );
+    }
+  }
+);
+
+export const getAgents = createAsyncThunk(
+  "users/getAgents",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get(USER_ENDPOINTS.GET_AGENT_LIST);
+
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch agents"
       );
     }
   }
@@ -174,7 +199,17 @@ const userSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-
+      .addCase(getAgents.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getAgents.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.agents = action.payload;
+      })
+      .addCase(getAgents.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
       // Update User
       .addCase(updateUser.pending, (state) => {
         state.isLoading = true;

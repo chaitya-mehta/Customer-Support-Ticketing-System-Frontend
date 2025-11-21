@@ -22,13 +22,13 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import type React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import { logout } from "../store/slices/authSlice";
 import { ROLES } from "../types";
 import { getUserRole } from "../utils/authHelpers";
+import NotificationModal from "../pages/NotificationModal";
 
 const Layout: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -121,6 +121,7 @@ const Layout: React.FC = () => {
             Support Ticket System
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <NotificationModal />
             <Avatar
               sx={{ bgcolor: "#1976d2", cursor: "pointer" }}
               onClick={handleMenu}

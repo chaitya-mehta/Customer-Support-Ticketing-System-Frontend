@@ -59,9 +59,9 @@ const Users: React.FC = () => {
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-  useEffect(() => {
-    handleFetchUsers(1);
-  }, [dispatch]);
+  // useEffect(() => {
+  //   handleFetchUsers(1);
+  // }, [dispatch]);
 
   useEffect(() => {
     handleFetchUsers(1);

@@ -126,9 +126,9 @@ const Categories: React.FC = () => {
     );
   };
 
-  useEffect(() => {
-    handleFetchCategories(1);
-  }, [dispatch]);
+  // useEffect(() => {
+  //   handleFetchCategories(1);
+  // }, [dispatch]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

@@ -1,4 +1,10 @@
-import { Add, AttachFile, Comment, Delete, Visibility } from "@mui/icons-material";
+import {
+  Add,
+  AttachFile,
+  Comment,
+  Delete,
+  Visibility,
+} from "@mui/icons-material";
 import {
   Alert,
   Box,
@@ -43,6 +49,7 @@ import {
   getTicketsByUser,
   updateTicket,
 } from "../store/slices/ticketSlice";
+import { getAgents } from "../store/slices/userSlice";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = [
@@ -69,10 +76,12 @@ const Dashboard: React.FC = () => {
   const [editingTicket, setEditingTicket] = useState<any>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
+  const activeAgents = useAppSelector((state) => state.user.agents);
 
   useEffect(() => {
     dispatch(getTicketsByUser());
     dispatch(getActiveCategories());
+    dispatch(getAgents());
   }, [dispatch]);
 
   const isCustomer = user.user?.role === "customer";
@@ -83,6 +92,7 @@ const Dashboard: React.FC = () => {
       .required("Title is required")
       .min(5, "Title must be at least 5 characters")
       .max(100, "Title must not exceed 100 characters"),
+    assignedAgent: Yup.string().required("Please assign an agent"),
     description: Yup.string()
       .trim()
       .required("Description is required")
@@ -120,6 +130,7 @@ const Dashboard: React.FC = () => {
       category: "",
       priority: "medium" as "low" | "medium" | "high",
       commentText: "",
+      assignedAgent: "",
     },
     validationSchema: validationSchema,
     validateOnChange: true,
@@ -144,6 +155,7 @@ const Dashboard: React.FC = () => {
           formData.append("description", values.description.trim());
           formData.append("category", values.category);
           formData.append("priority", values.priority);
+          formData.append("assignedAgent", values.assignedAgent);
 
           if (values.commentText.trim()) {
             formData.append("commentText", values.commentText.trim());
@@ -190,6 +202,7 @@ const Dashboard: React.FC = () => {
           : ticket.category?._id,
       priority: ticket.priority,
       commentText: ticket.commentText || "",
+      assignedAgent: ticket?.assignedAgent?._id || "",
     });
 
     setOpen(true);
@@ -341,6 +354,7 @@ const Dashboard: React.FC = () => {
               <TableCell sx={{ fontWeight: "bold" }}>Category</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Priority</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Assigned Agent</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Created</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
             </TableRow>
@@ -383,6 +397,19 @@ const Dashboard: React.FC = () => {
                       color={getStatusColor(ticket.status)}
                       size="small"
                     />
+                  </TableCell>
+                  <TableCell>
+                    {ticket.assignedAgent ? (
+                      <Typography >
+                        {typeof ticket.assignedAgent === "string"
+                          ? ticket.assignedAgent
+                          : ticket.assignedAgent.name}
+                      </Typography>
+                    ) : (
+                      <Typography sx={{ color: "red" }}>
+                        Not Assigned Yet
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell>
                     {new Date(ticket.createdAt).toLocaleDateString()}
@@ -514,6 +541,46 @@ const Dashboard: React.FC = () => {
                     {formik.errors.priority}
                   </Typography>
                 )}
+              </FormControl>
+              <FormControl
+                fullWidth
+                error={
+                  formik.touched.assignedAgent &&
+                  Boolean(formik.errors.assignedAgent)
+                }
+              >
+                <InputLabel>Assign Agent *</InputLabel>
+                <Select
+                  name="assignedAgent"
+                  value={formik.values.assignedAgent}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  label="Assign Agent *"
+                  disabled={isEditMode && isCustomer} // Customer cannot edit
+                >
+                  <MenuItem value="">
+                    <em>Select an agent</em>
+                  </MenuItem>
+
+                  {activeAgents && activeAgents.length > 0 ? (
+                    activeAgents.map((agent: any) => (
+                      <MenuItem key={agent._id} value={agent._id}>
+                        {agent.name}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem value="" disabled>
+                      No agents available
+                    </MenuItem>
+                  )}
+                </Select>
+
+                {formik.touched.assignedAgent &&
+                  formik.errors.assignedAgent && (
+                    <Typography variant="caption" color="error">
+                      {formik.errors.assignedAgent}
+                    </Typography>
+                  )}
               </FormControl>
 
               <TextField

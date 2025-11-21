@@ -109,7 +109,7 @@ const TicketDetail: React.FC = () => {
 
               <Divider sx={{ my: 2 }} />
 
-              <Typography variant="h6" sx={{ mb: 1 }}>
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: "bold" }}>
                 Description
               </Typography>
               <Typography
@@ -121,7 +121,7 @@ const TicketDetail: React.FC = () => {
 
               <Divider sx={{ my: 2 }} />
 
-              <Typography variant="h6" sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
                 User Comment
               </Typography>
               {!currentTicket.commentText ||
@@ -136,8 +136,8 @@ const TicketDetail: React.FC = () => {
                   </Typography>
                 </Paper>
               )}
-
-              <Typography variant="h6" sx={{ mb: 2 }}>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
                 Agent Comments
               </Typography>
               {currentTicket.agentComments.length === 0 ? (
