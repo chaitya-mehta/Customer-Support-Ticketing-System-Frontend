@@ -57,7 +57,7 @@ const Layout: React.FC = () => {
 
   const menuItems = [
     {
-      text: "Dashboard",
+      text: "Helpdesk",
       icon: <DashboardIcon />,
       path: "/dashboard",
       roles: [ROLES.CUSTOMER],
