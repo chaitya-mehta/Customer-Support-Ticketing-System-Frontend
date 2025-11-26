@@ -24,25 +24,12 @@ const TicketDetail: React.FC = () => {
   const { currentTicket, isLoading, error } = useAppSelector(
     (state) => state.ticket
   );
-  // const { user } = useAppSelector((state) => state.auth);
-  // const [comment, setComment] = useState("");
 
   useEffect(() => {
     if (id) {
       dispatch(getTicketById(id));
     }
   }, [dispatch, id]);
-
-  // const handleAddComment = async () => {
-  //   if (comment.trim() && id) {
-  //     const result = await dispatch(
-  //       addAgentComment({ id, commentText: comment })
-  //     );
-  //     if (addAgentComment.fulfilled.match(result)) {
-  //       setComment("");
-  //     }
-  //   }
-  // };
 
   if (isLoading && !currentTicket) {
     return (

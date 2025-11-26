@@ -72,10 +72,6 @@ const Tickets: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [connected, setConnected] = useState(false);
-  // const userData = JSON.parse(localStorage.getItem("user") || "null");
-  // const [snackbarOpen, setSnackbarOpen] = useState(false);
-  // const [snackbarMessage, setSnackbarMessage] = useState("");
-  // const [socketConnected, setSocketConnected] = useState(false);
 
   const handleFetchTickets = useCallback(
     (pageNumber: number) => {
@@ -270,72 +266,6 @@ const Tickets: React.FC = () => {
         return "default";
     }
   };
-
-  // ---------------------------
-  // Socket: init & listeners
-  // ---------------------------
-  // useEffect(() => {
-  //   // Only init socket if user is present (to provide userId token)
-  //   const currentUserId = user?.user?._id ?? null;
-  //   const token = user?.token ?? undefined;
-
-  //   if (!currentUserId) return undefined;
-
-  //   const socket = initSocket(currentUserId, token);
-
-  //   function handleNotification(n: any) {
-  //     if (!n) return;
-  //     // support different types
-  //     if (n.type === "ticket.created") {
-  //       setSnackbarMessage("New ticket created");
-  //       setSnackbarOpen(true);
-  //       // bring fresh data (page 1)
-  //       handleFetchTickets(1);
-  //     } else if (
-  //       n.type === "ticket.updated" ||
-  //       n.type === "ticket.status.updated"
-  //     ) {
-  //       setSnackbarMessage("Ticket updated");
-  //       setSnackbarOpen(true);
-  //       // refresh current page (or smart update)
-  //       handleFetchTickets(page);
-  //     } else {
-  //       // generic notification
-  //       setSnackbarMessage(n.payload?.message || "Notification received");
-  //       setSnackbarOpen(true);
-  //     }
-  //   }
-  //   socket.on("connect", () => {
-  //     console.log("Socket connected");
-  //   });
-
-  //   socket.on("new-notification", handleNotification);
-
-  //   socket.on("disconnect", () => {
-  //     console.log("Socket disconnected");
-  //   });
-
-  //   socket.on("error", (error) => {
-  //     console.error("Socket error:", error);
-  //   });
-
-  //   // cleanup - this runs when component unmounts or dependencies change
-  //   return () => {
-  //     console.log("Cleaning up socket connection");
-
-  //     // Remove all event listeners
-  //     socket.off("connect");
-  //     socket.off("new-notification", handleNotification);
-  //     socket.off("disconnect");
-  //     socket.off("error");
-
-  //     // Disconnect the socket
-  //     if (socket.connected) {
-  //       socket.disconnect();
-  //     }
-  //   };
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [user?.user?._id, page]); // re-run if user changes or page changes
   const userData = JSON.parse(localStorage.getItem("user")!);
   useEffect(() => {
     socket.on("connect", () => {

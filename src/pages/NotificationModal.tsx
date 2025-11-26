@@ -46,14 +46,11 @@ export default function NotificationModal() {
 
   return (
     <>
-      {/* Bell Icon */}
       <IconButton color="inherit" onClick={handleOpen}>
         <Badge badgeContent={unreadCount} color="error">
           <NotificationsIcon />
         </Badge>
       </IconButton>
-
-      {/* Dropdown */}
       <Menu
         anchorEl={anchorEl}
         open={open}
@@ -65,7 +62,7 @@ export default function NotificationModal() {
             maxHeight: 400,
             mt: 1.5,
             borderRadius: 2,
-            overflow: "hidden", // Prevent container overflow
+            overflow: "hidden",
           },
         }}
       >
@@ -101,12 +98,11 @@ export default function NotificationModal() {
 
         <Divider />
 
-        {/* Improved notifications container */}
         <Box
           sx={{
             maxHeight: 300,
             overflowY: "auto",
-            overflowX: "hidden", // Hide horizontal scroll
+            overflowX: "hidden",
             "&::-webkit-scrollbar": {
               width: 6,
             },
@@ -127,10 +123,6 @@ export default function NotificationModal() {
             notifications?.map((n: any) => (
               <MenuItem
                 key={n._id}
-                // onClick={() => {
-                //   markReadSingle(n._id);
-                //   handleClose();
-                // }}
                 sx={{
                   alignItems: "flex-start",
                   gap: 1,
@@ -154,7 +146,7 @@ export default function NotificationModal() {
                 <Box
                   sx={{
                     flex: 1,
-                    minWidth: 0, // Important for text truncation
+                    minWidth: 0,
                     overflow: "hidden",
                   }}
                 >

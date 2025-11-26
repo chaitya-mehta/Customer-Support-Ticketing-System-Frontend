@@ -576,7 +576,7 @@ const Dashboard: React.FC = () => {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   label="Assign Agent *"
-                  disabled={isEditMode && isCustomer} // Customer cannot edit
+                  disabled={isEditMode && isCustomer}
                 >
                   <MenuItem value="">
                     <em>Select an agent</em>

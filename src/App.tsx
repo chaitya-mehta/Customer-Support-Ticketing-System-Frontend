@@ -1,6 +1,6 @@
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Provider } from "react-redux";
 import {
   Navigate,
@@ -12,18 +12,20 @@ import { useAppDispatch, useAppSelector } from "./hooks";
 import { getCurrentUser } from "./store/slices/authSlice";
 import { store } from "./store/store";
 
-import { ToastContainer } from "react-toastify";
-import Layout from "./components/Layout";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Categories from "./pages/Categories";
-import Dashboard from "./pages/Dashboard";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import TicketDetail from "./pages/TicketDetail";
-import Tickets from "./pages/Tickets";
-import Users from "./pages/Users";
 import { ROLES } from "./types";
-import AdminDashboard from "./pages/AdminDashboard";
+import { Box, CircularProgress } from "@mui/material";
+import { ToastContainer } from "react-toastify";
+
+const Layout = lazy(() => import("./components/Layout"));
+const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
+const Categories = lazy(() => import("./pages/Categories"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const TicketDetail = lazy(() => import("./pages/TicketDetail"));
+const Tickets = lazy(() => import("./pages/Tickets"));
+const Users = lazy(() => import("./pages/Users"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 const theme = createTheme({
   palette: {
@@ -50,7 +52,18 @@ function AppContent() {
   }, [dispatch, token]);
 
   return (
-    <>
+    <Suspense
+      fallback={
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="100vh"
+        >
+          <CircularProgress />
+        </Box>
+      }
+    >
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -130,7 +143,7 @@ function AppContent() {
         draggable
         theme="colored"
       />
-    </>
+    </Suspense>
   );
 }
 

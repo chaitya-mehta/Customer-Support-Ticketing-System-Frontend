@@ -1,4 +1,3 @@
-// src/services/socket.ts
 import { io, Socket } from "socket.io-client";
 
 let socket: Socket | null = null;
@@ -9,13 +8,11 @@ let socket: Socket | null = null;
  * @param token - auth token (optional)
  */
 export const initSocket = (userId?: string, token?: string) => {
-  // If socket already exists and is connected, return it
   if (socket?.connected) {
     console.log("[socket] Using existing connection");
     return socket;
   }
 
-  // If socket exists but disconnected, clean it up
   if (socket) {
     socket.disconnect();
     socket = null;
@@ -25,7 +22,6 @@ export const initSocket = (userId?: string, token?: string) => {
   if (userId) query.userId = userId;
   if (token) query.token = token;
 
-  // Directly use your BE URL
   const apiUrl = "http://localhost:5000";
 
   console.log("[socket] Connecting to:", apiUrl);
@@ -33,7 +29,7 @@ export const initSocket = (userId?: string, token?: string) => {
 
   socket = io(apiUrl, {
     query,
-    transports: ["websocket", "polling"], // Allow both
+    transports: ["websocket", "polling"],
     autoConnect: true,
     reconnection: true,
     reconnectionAttempts: 5,

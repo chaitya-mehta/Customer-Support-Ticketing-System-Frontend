@@ -49,7 +49,6 @@ const initialState: UserState = {
   totalRecords: 0,
 };
 
-// API Endpoints
 const USER_ENDPOINTS = {
   GET_ALL: "/users",
   TOGGLE_STATUS: (id: string) => `/users/${id}/status`,
@@ -171,7 +170,6 @@ const userSlice = createSlice({
       })
       .addCase(getAllUsers.fulfilled, (state, action) => {
         state.isLoading = false;
-        // state.users = action.payload?.data || [];
         state.users = action.payload.users;
         state.totalPages = action.payload.totalPages;
         state.totalRecords = action.payload.totalCount;

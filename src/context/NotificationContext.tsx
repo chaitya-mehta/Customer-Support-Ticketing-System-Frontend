@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { getNotifications, markAllAsRead } from "../api/notificationAPI"; // Import markAllAsRead
+import { getNotifications, markAllAsRead } from "../api/notificationAPI";
 import { useSocket } from "../hooks/useSocket";
 import { socket } from "../utils/socket";
 
@@ -42,18 +42,6 @@ export const NotificationProvider = ({ children }: any) => {
     console.log("Received new notification via socket:", data);
     setNotifications((prev) => [data, ...prev]);
   });
-
-  // Mark one notification as read
-  // const markReadSingle = async (id: string) => {
-  //   try {
-  //     await markAsRead(id);
-  //     setNotifications((prev) =>
-  //       prev.map((n) => (n._id === id ? { ...n, read: true } : n))
-  //     );
-  //   } catch (error) {
-  //     console.error("Error marking notification as read:", error);
-  //   }
-  // };
 
   const markAllAsReadHandler = async () => {
     try {
