@@ -37,6 +37,7 @@ import {
 import { useDebounce } from "../utils/useDebounce";
 import AddEditUserDialog from "./AddEditUserDialog";
 import Pagination from "./Pagination";
+import { ROLES } from "../types";
 
 const Users: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -136,11 +137,11 @@ const Users: React.FC = () => {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case "admin":
+      case ROLES.ADMIN:
         return "error";
-      case "agent":
+      case ROLES.AGENT:
         return "warning";
-      case "customer":
+      case ROLES.CUSTOMER:
         return "success";
       default:
         return "default";
