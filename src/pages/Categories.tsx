@@ -58,10 +58,10 @@ const Categories: React.FC = () => {
     pageSize = 2,
   } = useAppSelector((state) => state.category);
 
-  const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState<number>(1);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<boolean | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);

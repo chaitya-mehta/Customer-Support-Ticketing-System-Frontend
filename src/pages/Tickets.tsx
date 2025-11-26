@@ -62,16 +62,16 @@ const Tickets: React.FC = () => {
   const { activeCategories = [] } = useAppSelector((state) => state.category);
   const activeAgents = useAppSelector((state) => state.user.agents);
   const { user } = useAppSelector((state) => state.auth);
-  const [open, setOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [open, setOpen] = useState<boolean>(false);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [editingTicket, setEditingTicket] = useState<any>(null);
   const [page, setPage] = useState<number>(1);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [priorityFilter, setPriorityFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
-  const [connected, setConnected] = useState(false);
+  const [connected, setConnected] = useState<boolean>(false);
 
   const handleFetchTickets = useCallback(
     (pageNumber: number) => {

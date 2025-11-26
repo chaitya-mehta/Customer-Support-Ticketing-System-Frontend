@@ -25,8 +25,8 @@ const NotificationContext = createContext<NotificationContextType | null>(null);
 
 export const NotificationProvider = ({ children }: any) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const userData = JSON.parse(localStorage.getItem("user") || "null");
   const userId = userData?.id;
   useEffect(() => {

@@ -71,8 +71,8 @@ const Dashboard: React.FC = () => {
   const { tickets, isLoading, error } = useAppSelector((state) => state.ticket);
   const { activeCategories } = useAppSelector((state) => state.category);
   const { user } = useAppSelector((state) => state.auth);
-  const [open, setOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [open, setOpen] = useState<boolean>(false);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [editingTicket, setEditingTicket] = useState<any>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [fileErrors, setFileErrors] = useState<string[]>([]);

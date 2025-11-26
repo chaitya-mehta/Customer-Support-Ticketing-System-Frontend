@@ -33,7 +33,7 @@ const AddEditUserDialog: React.FC<AddEditUserDialogProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const isEditMode = Boolean(user);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
 
   const addUserValidationSchema = Yup.object({
     name: Yup.string()

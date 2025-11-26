@@ -51,10 +51,10 @@ const Users: React.FC = () => {
   } = useAppSelector((state) => state.user);
   const { user: currentUser } = useAppSelector((state) => state.auth);
 
-  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [userModalOpen, setUserModalOpen] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
-  const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState<number>(1);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<boolean | null>(null);
 
