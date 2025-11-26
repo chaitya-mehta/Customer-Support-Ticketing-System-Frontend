@@ -36,10 +36,11 @@ const Login: React.FC = () => {
       case ROLES.CUSTOMER:
         return "/dashboard";
       case ROLES.AGENT:
-      case ROLES.ADMIN:
         return "/tickets";
+      case ROLES.ADMIN:
+        return "/admin-dashboard";
       default:
-        return "/dashboard";
+        return "/login";
     }
   };
 

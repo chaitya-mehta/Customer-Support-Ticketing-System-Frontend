@@ -23,6 +23,7 @@ import TicketDetail from "./pages/TicketDetail";
 import Tickets from "./pages/Tickets";
 import Users from "./pages/Users";
 import { ROLES } from "./types";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const theme = createTheme({
   palette: {
@@ -76,6 +77,14 @@ function AppContent() {
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.AGENT]}>
                 <Tickets />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                <AdminDashboard />
               </ProtectedRoute>
             }
           />

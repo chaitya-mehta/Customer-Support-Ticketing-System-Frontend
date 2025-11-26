@@ -23,7 +23,7 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import { logout } from "../store/slices/authSlice";
 import { ROLES } from "../types";
@@ -33,6 +33,7 @@ import NotificationModal from "../pages/NotificationModal";
 const Layout: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAppSelector((state) => state.auth);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -61,6 +62,12 @@ const Layout: React.FC = () => {
       icon: <DashboardIcon />,
       path: "/dashboard",
       roles: [ROLES.CUSTOMER],
+    },
+    {
+      text: "Admin-Dashboard",
+      icon: <DashboardIcon />,
+      path: "/admin-dashboard",
+      roles: [ROLES.ADMIN],
     },
     {
       text: "Tickets",
@@ -95,7 +102,22 @@ const Layout: React.FC = () => {
       <List>
         {filteredMenuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
-            <ListItemButton onClick={() => navigate(item.path)}>
+            <ListItemButton
+              onClick={() => navigate(item.path)}
+              selected={location.pathname === item.path}
+              sx={{
+                "&.Mui-selected": {
+                  backgroundColor: "#1976d2",
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "#115293",
+                  },
+                  "& .MuiListItemIcon-root": {
+                    color: "white",
+                  },
+                },
+              }}
+            >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>
