@@ -42,6 +42,8 @@ import Pagination from "./Pagination";
 import { DataTable, type Column } from "../components/DataTable";
 import type { Category } from "../types";
 
+import { TOAST_MESSAGES, VALIDATION_MESSAGES } from "../constants";
+
 const Categories: React.FC = () => {
   const dispatch = useAppDispatch();
   const {
@@ -64,8 +66,8 @@ const Categories: React.FC = () => {
   const categoryValidationSchema = Yup.object({
     name: Yup.string()
       .trim()
-      .min(3, "Category name must be at least 3 characters")
-      .required("Category name is required"),
+      .min(3, VALIDATION_MESSAGES.CATEGORY.NAME_MIN_LENGTH)
+      .required(VALIDATION_MESSAGES.CATEGORY.NAME_REQUIRED),
   });
 
   const formik = useFormik({
@@ -79,7 +81,7 @@ const Categories: React.FC = () => {
           createCategory({ name: values.name.trim() })
         );
         if (createCategory.fulfilled.match(result)) {
-          toast.success("Category Added successfully!");
+          toast.success(TOAST_MESSAGES.CATEGORY.CREATED);
           handleCloseModal();
           handleFetchCategories(1);
         }
@@ -91,7 +93,7 @@ const Categories: React.FC = () => {
           })
         );
         if (updateCategory.fulfilled.match(result)) {
-          toast.success("Category Updated successfully!");
+          toast.success(TOAST_MESSAGES.CATEGORY.UPDATED);
           handleCloseModal();
         }
       }
@@ -173,8 +175,8 @@ const Categories: React.FC = () => {
     );
     toast.success(
       !currentStatus
-        ? "Category Activated Successfully!"
-        : "Category Deactivated Successfully!"
+        ? TOAST_MESSAGES.CATEGORY.ACTIVATED
+        : TOAST_MESSAGES.CATEGORY.DEACTIVATED
     );
   };
 

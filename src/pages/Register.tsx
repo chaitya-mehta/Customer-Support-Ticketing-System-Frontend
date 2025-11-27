@@ -14,6 +14,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
+import { TOAST_MESSAGES, VALIDATION_MESSAGES } from "../constants";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import {
   clearError,
@@ -29,22 +30,22 @@ const Register: React.FC = () => {
   const validationSchema = Yup.object({
     name: Yup.string()
       .trim()
-      .min(3, "Full Name must be at least 3 characters")
-      .required("Full Name is required"),
+      .min(3, VALIDATION_MESSAGES.NAME.MIN_LENGTH)
+      .required(VALIDATION_MESSAGES.NAME.REQUIRED),
     email: Yup.string()
-      .email("Invalid email address")
-      .required("Email is required"),
-    role: Yup.string().required("Role is required"),
+      .email(VALIDATION_MESSAGES.EMAIL.INVALID)
+      .required(VALIDATION_MESSAGES.EMAIL.REQUIRED),
+    role: Yup.string().required(VALIDATION_MESSAGES.ROLE.REQUIRED),
     password: Yup.string()
-      .min(8, "Password must be at least 8 characters")
-      .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .matches(/[a-z]/, "Password must contain at least one lowercase letter")
-      .matches(/[0-9]/, "Password must contain at least one number")
+      .min(8, VALIDATION_MESSAGES.PASSWORD.MIN_LENGTH_8)
+      .matches(/[A-Z]/, VALIDATION_MESSAGES.PASSWORD.UPPERCASE)
+      .matches(/[a-z]/, VALIDATION_MESSAGES.PASSWORD.LOWERCASE)
+      .matches(/[0-9]/, VALIDATION_MESSAGES.PASSWORD.NUMBER)
       .matches(
         /[@$!%*?&#]/,
-        "Password must contain at least one special character"
+        VALIDATION_MESSAGES.PASSWORD.SPECIAL_CHAR
       )
-      .required("Password is required"),
+      .required(VALIDATION_MESSAGES.PASSWORD.REQUIRED),
   });
 
   const formik = useFormik({
@@ -63,7 +64,7 @@ const Register: React.FC = () => {
       const result = await dispatch(register(payload));
 
       if (register.fulfilled.match(result)) {
-        toast.success("Registration successful!");
+        toast.success(TOAST_MESSAGES.AUTH.REGISTER_SUCCESS);
         resetForm();
         setTimeout(() => navigate("/dashboard"), 1500);
       } else if (register.rejected.match(result)) {

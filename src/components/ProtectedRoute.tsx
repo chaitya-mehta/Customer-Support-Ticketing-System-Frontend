@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { getUserRole } from "../utils/authHelpers";
+import { STORAGE_KEYS } from "../constants";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,7 +12,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   allowedRoles,
 }) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
   const role = getUserRole();
 
   if (!token) {

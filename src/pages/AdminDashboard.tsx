@@ -13,6 +13,7 @@ import { getAllUsers } from "../store/slices/userSlice";
 import { getAllTickets } from "../store/slices/ticketSlice";
 import { toast } from "react-toastify";
 import { useAppDispatch } from "../hooks";
+import { TOAST_MESSAGES } from "../constants";
 
 export default function AdminDashboard() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -40,7 +41,7 @@ export default function AdminDashboard() {
       setTickets(ticketData.tickets || []);
       setTotalTickets(ticketData.totalCount || 0);
     } catch (err) {
-      toast.error("Failed to load admin data");
+      toast.error(TOAST_MESSAGES.ERROR.ADMIN_DATA_FAILED);
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosInstance from "../../api/axiosInstance";
 import { AUTH_ENDPOINTS } from "../../api/endpoints";
 import type { ApiResponse, AuthState, User } from "../../types";
+import { STORAGE_KEYS } from "../../constants";
 
 interface LoginPayload {
   email: string;
@@ -23,8 +24,8 @@ export const login = createAsyncThunk(
         ApiResponse<{ user: User; token: string }>
       >(AUTH_ENDPOINTS.LOGIN, payload);
       const { user, token } = response.data.data!;
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       return { user, token };
     } catch (error: any) {
       const message =
@@ -70,10 +71,10 @@ export const getCurrentUser = createAsyncThunk(
 );
 
 const initialState: AuthState = {
-  user: localStorage.getItem("user")
-    ? JSON.parse(localStorage.getItem("user")!)
+  user: localStorage.getItem(STORAGE_KEYS.USER)
+    ? JSON.parse(localStorage.getItem(STORAGE_KEYS.USER)!)
     : null,
-  token: localStorage.getItem("token"),
+  token: localStorage.getItem(STORAGE_KEYS.TOKEN),
   isLoading: false,
   error: null,
 };
@@ -85,8 +86,8 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
     },
     clearError: (state) => {
       state.error = null;
@@ -113,7 +114,7 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(register.fulfilled, (state, action) => {
+      .addCase(register.fulfilled, (state) => {
         state.isLoading = false;
       })
       .addCase(register.rejected, (state, action) => {

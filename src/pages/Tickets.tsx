@@ -40,6 +40,7 @@ import { useNotifications } from "../context/NotificationContext";
 import { getAgents } from "../store/slices/userSlice";
 import { DataTable, type Column } from "../components/DataTable";
 import type { Ticket } from "../types";
+import { VALIDATION_MESSAGES } from "../constants";
 
 const Tickets: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -134,13 +135,13 @@ const Tickets: React.FC = () => {
   const editValidationSchema = Yup.object({
     commentText: Yup.string()
       .trim()
-      .required("Comment is required")
-      .min(3, "Comment must be at least 3 characters")
-      .max(500, "Comment must not exceed 500 characters"),
+      .required(VALIDATION_MESSAGES.COMMENT.REQUIRED)
+      .min(3, VALIDATION_MESSAGES.COMMENT.MIN_LENGTH)
+      .max(500, VALIDATION_MESSAGES.COMMENT.MAX_LENGTH),
     status: Yup.string()
-      .oneOf(["open", "in progress", "resolved", "closed"], "Invalid status")
-      .required("Status is required"),
-    assignedAgent: Yup.string().required("Agent assignment is required"),
+      .oneOf(["open", "in progress", "resolved", "closed"], VALIDATION_MESSAGES.STATUS.INVALID)
+      .required(VALIDATION_MESSAGES.STATUS.REQUIRED),
+    assignedAgent: Yup.string().required(VALIDATION_MESSAGES.AGENT.REQUIRED),
   });
   const validationSchema = isEditMode && editValidationSchema;
   const formik = useFormik({

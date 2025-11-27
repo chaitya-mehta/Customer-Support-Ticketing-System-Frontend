@@ -17,6 +17,7 @@ import * as Yup from "yup";
 import { useAppDispatch } from "../hooks";
 import { register, type RegisterPayload } from "../store/slices/authSlice";
 import { updateUser, type User } from "../store/slices/userSlice";
+import { TOAST_MESSAGES, VALIDATION_MESSAGES } from "../constants";
 
 interface AddEditUserDialogProps {
   open: boolean;
@@ -38,34 +39,34 @@ const AddEditUserDialog: React.FC<AddEditUserDialogProps> = ({
   const addUserValidationSchema = Yup.object({
     name: Yup.string()
       .trim()
-      .min(3, "Full Name must be at least 3 characters")
-      .required("Full Name is required"),
+      .min(3, VALIDATION_MESSAGES.NAME.MIN_LENGTH)
+      .required(VALIDATION_MESSAGES.NAME.REQUIRED),
     email: Yup.string()
-      .email("Invalid email address")
-      .required("Email is required"),
-    role: Yup.string().required("Role is required"),
+      .email(VALIDATION_MESSAGES.EMAIL.INVALID)
+      .required(VALIDATION_MESSAGES.EMAIL.REQUIRED),
+    role: Yup.string().required(VALIDATION_MESSAGES.ROLE.REQUIRED),
     password: Yup.string()
-      .min(8, "Password must be at least 8 characters")
-      .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .matches(/[a-z]/, "Password must contain at least one lowercase letter")
-      .matches(/[0-9]/, "Password must contain at least one number")
+      .min(8, VALIDATION_MESSAGES.PASSWORD.MIN_LENGTH_8)
+      .matches(/[A-Z]/, VALIDATION_MESSAGES.PASSWORD.UPPERCASE)
+      .matches(/[a-z]/, VALIDATION_MESSAGES.PASSWORD.LOWERCASE)
+      .matches(/[0-9]/, VALIDATION_MESSAGES.PASSWORD.NUMBER)
       .matches(
         /[@$!%*?&#]/,
-        "Password must contain at least one special character"
+        VALIDATION_MESSAGES.PASSWORD.SPECIAL_CHAR
       )
-      .required("Password is required"),
+      .required(VALIDATION_MESSAGES.PASSWORD.REQUIRED),
     isActive: Yup.boolean(),
   });
 
   const editUserValidationSchema = Yup.object({
     name: Yup.string()
       .trim()
-      .min(3, "Full Name must be at least 3 characters")
-      .required("Full Name is required"),
+      .min(3, VALIDATION_MESSAGES.NAME.MIN_LENGTH)
+      .required(VALIDATION_MESSAGES.NAME.REQUIRED),
     email: Yup.string()
-      .email("Invalid email address")
-      .required("Email is required"),
-    role: Yup.string().required("Role is required"),
+      .email(VALIDATION_MESSAGES.EMAIL.INVALID)
+      .required(VALIDATION_MESSAGES.EMAIL.REQUIRED),
+    role: Yup.string().required(VALIDATION_MESSAGES.ROLE.REQUIRED),
     password: Yup.string().notRequired(),
     isActive: Yup.boolean(),
   });
@@ -99,7 +100,7 @@ const AddEditUserDialog: React.FC<AddEditUserDialogProps> = ({
           );
 
           if (updateUser.fulfilled.match(result)) {
-            toast.success("User Updated successfully!");
+            toast.success(TOAST_MESSAGES.USER.UPDATED);
             onUserUpdated();
             onClose();
           } else if (updateUser.rejected.match(result)) {
@@ -116,7 +117,7 @@ const AddEditUserDialog: React.FC<AddEditUserDialogProps> = ({
           const result = await dispatch(register(payload));
 
           if (register.fulfilled.match(result)) {
-            toast.success("New User Added successfully!");
+            toast.success(TOAST_MESSAGES.USER.CREATED);
             onUserUpdated();
             onClose();
           } else if (register.rejected.match(result)) {

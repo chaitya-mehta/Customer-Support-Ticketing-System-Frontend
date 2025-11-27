@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api";
+import { STORAGE_KEYS } from "../constants";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -17,7 +19,7 @@ export const navigateTo = (path: string) => {
 };
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,8 +33,8 @@ axiosInstance.interceptors.response.use(
   (error) => {
     console.error("API Error:", error);
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
       navigateTo("/login");
     }
     return Promise.reject(error);

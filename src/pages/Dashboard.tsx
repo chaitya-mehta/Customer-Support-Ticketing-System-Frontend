@@ -45,6 +45,7 @@ import {
 import { getAgents } from "../store/slices/userSlice";
 import DataTable, { type Column } from "../components/DataTable";
 import type { Ticket } from "../types";
+import { VALIDATION_MESSAGES } from "../constants";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = [
@@ -84,22 +85,22 @@ const Dashboard: React.FC = () => {
   const createValidationSchema = Yup.object({
     name: Yup.string()
       .trim()
-      .required("Title is required")
-      .min(5, "Title must be at least 5 characters")
-      .max(100, "Title must not exceed 100 characters"),
-    assignedAgent: Yup.string().required("Please assign an agent"),
+      .required(VALIDATION_MESSAGES.TITLE.REQUIRED)
+      .min(5, VALIDATION_MESSAGES.TITLE.MIN_LENGTH)
+      .max(100, VALIDATION_MESSAGES.TITLE.MAX_LENGTH),
+    assignedAgent: Yup.string().required(VALIDATION_MESSAGES.AGENT.ASSIGN_REQUIRED),
     description: Yup.string()
       .trim()
-      .required("Description is required")
-      .min(10, "Description must be at least 10 characters")
-      .max(1000, "Description must not exceed 1000 characters"),
-    category: Yup.string().required("Category is required"),
+      .required(VALIDATION_MESSAGES.DESCRIPTION.REQUIRED)
+      .min(10, VALIDATION_MESSAGES.DESCRIPTION.MIN_LENGTH)
+      .max(1000, VALIDATION_MESSAGES.DESCRIPTION.MAX_LENGTH),
+    category: Yup.string().required(VALIDATION_MESSAGES.CATEGORY.REQUIRED),
     priority: Yup.string()
-      .oneOf(["low", "medium", "high"], "Invalid priority level")
-      .required("Priority is required"),
+      .oneOf(["low", "medium", "high"], VALIDATION_MESSAGES.PRIORITY.INVALID)
+      .required(VALIDATION_MESSAGES.PRIORITY.REQUIRED),
     commentText: Yup.string()
       .trim()
-      .max(500, "Comment must not exceed 500 characters")
+      .max(500, VALIDATION_MESSAGES.COMMENT.MAX_LENGTH)
       .notRequired(),
   });
 
@@ -110,9 +111,9 @@ const Dashboard: React.FC = () => {
     priority: Yup.string(),
     commentText: Yup.string()
       .trim()
-      .required("Comment is required")
-      .min(3, "Comment must be at least 3 characters")
-      .max(500, "Comment must not exceed 500 characters"),
+      .required(VALIDATION_MESSAGES.COMMENT.REQUIRED)
+      .min(3, VALIDATION_MESSAGES.COMMENT.MIN_LENGTH)
+      .max(500, VALIDATION_MESSAGES.COMMENT.MAX_LENGTH),
   });
 
   const validationSchema =

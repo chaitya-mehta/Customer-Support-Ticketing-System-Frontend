@@ -26,7 +26,7 @@ import React, { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import { logout } from "../store/slices/authSlice";
-import { ROLES } from "../types";
+import { ROLES, type Role } from "../types";
 import { getUserRole } from "../utils/authHelpers";
 import NotificationModal from "../pages/NotificationModal";
 
@@ -56,40 +56,45 @@ const Layout: React.FC = () => {
     navigate("/login");
   };
 
-  const menuItems = [
-    {
-      text: "Helpdesk",
-      icon: <DashboardIcon />,
-      path: "/dashboard",
-      roles: [ROLES.CUSTOMER],
-    },
-    {
-      text: "Admin-Dashboard",
-      icon: <DashboardIcon />,
-      path: "/admin-dashboard",
-      roles: [ROLES.ADMIN],
-    },
-    {
-      text: "Tickets",
-      icon: <TicketIcon />,
-      path: "/tickets",
-      roles: [ROLES.ADMIN, ROLES.AGENT],
-    },
-    {
-      text: "Categories",
-      icon: <CategoryIcon />,
-      path: "/categories",
-      roles: [ROLES.ADMIN],
-    },
-    {
-      text: "Users",
-      icon: <CategoryIcon />,
-      path: "/users",
-      roles: [ROLES.ADMIN],
-    },
-  ];
+  const menuItems: Array<{
+    text: string;
+    icon: React.ReactElement;
+    path: string;
+    roles: Role[];
+  }> = [
+      {
+        text: "Helpdesk",
+        icon: <DashboardIcon />,
+        path: "/dashboard",
+        roles: [ROLES.CUSTOMER],
+      },
+      {
+        text: "Admin-Dashboard",
+        icon: <DashboardIcon />,
+        path: "/admin-dashboard",
+        roles: [ROLES.ADMIN],
+      },
+      {
+        text: "Tickets",
+        icon: <TicketIcon />,
+        path: "/tickets",
+        roles: [ROLES.ADMIN, ROLES.AGENT],
+      },
+      {
+        text: "Categories",
+        icon: <CategoryIcon />,
+        path: "/categories",
+        roles: [ROLES.ADMIN],
+      },
+      {
+        text: "Users",
+        icon: <CategoryIcon />,
+        path: "/users",
+        roles: [ROLES.ADMIN],
+      },
+    ];
   const filteredMenuItems = menuItems.filter((item) =>
-    item.roles.includes(userRole as ROLES)
+    userRole ? item.roles.includes(userRole) : false
   );
   const drawer = (
     <Box sx={{ width: 250 }}>

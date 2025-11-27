@@ -31,6 +31,7 @@ import AddEditUserDialog from "./AddEditUserDialog";
 import Pagination from "./Pagination";
 import { ROLES, type User } from "../types";
 import DataTable, { type Column } from "../components/DataTable";
+import { TOAST_MESSAGES } from "../constants";
 
 const Users: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -101,9 +102,9 @@ const Users: React.FC = () => {
 
     if (toggleUserStatus.fulfilled.match(result)) {
       toast.success(
-        `User has been ${
-          !currentStatus ? "activated" : "deactivated"
-        } successfully`
+        !currentStatus
+          ? TOAST_MESSAGES.USER.ACTIVATED
+          : TOAST_MESSAGES.USER.DEACTIVATED
       );
       handleFetchUsers(page);
     }

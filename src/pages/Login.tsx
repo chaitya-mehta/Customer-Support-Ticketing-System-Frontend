@@ -13,6 +13,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
+import { TOAST_MESSAGES, VALIDATION_MESSAGES } from "../constants";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import { login } from "../store/slices/authSlice";
 import { ROLES } from "../types";
@@ -24,11 +25,11 @@ const Login: React.FC = () => {
 
   const validationSchema = Yup.object({
     email: Yup.string()
-      .email("Please enter a valid email")
-      .required("Email is required"),
+      .email(VALIDATION_MESSAGES.EMAIL.VALID)
+      .required(VALIDATION_MESSAGES.EMAIL.REQUIRED),
     password: Yup.string()
-      .min(6, "Password must be at least 6 characters")
-      .required("Password is required"),
+      .min(6, VALIDATION_MESSAGES.PASSWORD.MIN_LENGTH)
+      .required(VALIDATION_MESSAGES.PASSWORD.REQUIRED),
   });
 
   const getRedirectPath = (role: string) => {
@@ -54,7 +55,7 @@ const Login: React.FC = () => {
       const result = await dispatch(login(values));
 
       if (login.fulfilled.match(result)) {
-        toast.success("Login successful!");
+        toast.success(TOAST_MESSAGES.AUTH.LOGIN_SUCCESS);
         resetForm();
 
         const userRole = result.payload.user.role;
