@@ -92,7 +92,6 @@ const Tickets: React.FC = () => {
   );
 
   useEffect(() => {
-    handleFetchTickets(1);
     dispatch(getActiveCategories());
     dispatch(getAgents());
   }, [dispatch]);
@@ -263,12 +262,12 @@ const Tickets: React.FC = () => {
   const userData = JSON.parse(localStorage.getItem("user")!);
   useEffect(() => {
     socket.on("connect", () => {
-      console.log("user?.user?.id:", userData?.id);
+      console.log("user?.user?.id:123", userData?.id);
       socket.emit("join-user-room", userData?.id);
       setConnected(true);
     });
     socket.on("connect1", (data) => {
-      console.log("user?.user?.id:", userData?.id);
+      console.log("user?.user?.id:12345", userData?.id);
       socket.emit("join-user-room", userData?.id);
       console.log("Received initial data:", data);
     });
