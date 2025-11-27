@@ -24,15 +24,8 @@ import {
   ListItemIcon,
   ListItemText,
   MenuItem,
-  Paper,
   Select,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
@@ -50,6 +43,8 @@ import {
   updateTicket,
 } from "../store/slices/ticketSlice";
 import { getAgents } from "../store/slices/userSlice";
+import DataTable, { type Column } from "../components/DataTable";
+import type { Ticket } from "../types";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = [
@@ -308,6 +303,103 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const ticketColumns: Column<Ticket>[] = [
+    {
+      id: "ticketId",
+      label: "TicketId",
+      width: 100,
+      render: (ticket) => `#${String(ticket._id).slice(-8).toUpperCase()}`,
+    },
+    {
+      id: "name",
+      label: "Title",
+      width: 250,
+      render: (ticket) => ticket.name,
+    },
+    {
+      id: "category",
+      label: "Category",
+      width: 250,
+      render: (ticket) =>
+        typeof ticket.category === "string"
+          ? ticket.category
+          : ticket.category?.name,
+    },
+    {
+      id: "priority",
+      label: "Priority",
+      width: 150,
+      render: (ticket) => (
+        <Chip
+          label={ticket.priority}
+          color={getPriorityColor(ticket.priority)}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: "assignedAgent",
+      label: "Assigned Agent",
+      width: 300,
+      render: (ticket) =>
+        ticket.assignedAgent ? (
+          <Typography>
+            {typeof ticket.assignedAgent === "string"
+              ? ticket.assignedAgent
+              : ticket.assignedAgent.name}
+          </Typography>
+        ) : (
+          <Typography sx={{ color: "red" }}>Not Assigned Yet</Typography>
+        ),
+    },
+    {
+      id: "status",
+      label: "Status",
+      width: 150,
+      render: (ticket) => (
+        <Chip
+          label={ticket.status}
+          color={getStatusColor(ticket.status)}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: "createdAt",
+      label: "Created",
+      width: 150,
+      render: (ticket) => new Date(ticket.createdAt).toLocaleDateString(),
+    },
+    {
+      id: "actions",
+      label: "Action",
+      width: 100,
+      render: (ticket) => (
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="View Ticket">
+            <IconButton
+              size="small"
+              onClick={() => navigate(`/tickets/${ticket._id}`)}
+              color="primary"
+            >
+              <Visibility />
+            </IconButton>
+          </Tooltip>
+          {isCustomer && (
+            <Tooltip title="Add Comment">
+              <IconButton
+                size="small"
+                onClick={() => handleEdit(ticket)}
+                color="secondary"
+              >
+                <Comment />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
+      ),
+    },
+  ];
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box
@@ -346,124 +438,14 @@ const Dashboard: React.FC = () => {
         </Alert>
       )}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
-            <TableRow>
-              <TableCell width={100} sx={{ fontWeight: "bold" }}>
-                TicketId
-              </TableCell>
-              <TableCell width={250} sx={{ fontWeight: "bold" }}>
-                Title
-              </TableCell>
-              <TableCell width={250} sx={{ fontWeight: "bold" }}>
-                Category
-              </TableCell>
-              <TableCell width={150} sx={{ fontWeight: "bold" }}>
-                Priority
-              </TableCell>
-              <TableCell width={300} sx={{ fontWeight: "bold" }}>
-                Assigned Agent
-              </TableCell>
-              <TableCell width={150} sx={{ fontWeight: "bold" }}>
-                Status
-              </TableCell>
-              <TableCell width={150} sx={{ fontWeight: "bold" }}>
-                Created
-              </TableCell>
-              <TableCell width={100} sx={{ fontWeight: "bold" }}>
-                Action
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} sx={{ textAlign: "center", py: 4 }}>
-                  <CircularProgress />
-                </TableCell>
-              </TableRow>
-            ) : tickets.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={7}
-                  sx={{ textAlign: "center", py: 4, fontWeight: "bold" }}
-                >
-                  No tickets found
-                </TableCell>
-              </TableRow>
-            ) : (
-              tickets.map((ticket: any) => (
-                <TableRow key={ticket._id} hover>
-                  <TableCell>
-                    #{String(ticket._id).slice(-8).toUpperCase()}
-                  </TableCell>
-                  <TableCell>{ticket.name}</TableCell>
-                  <TableCell>
-                    {typeof ticket.category === "string"
-                      ? ticket.category
-                      : ticket.category?.name}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={ticket.priority}
-                      color={getPriorityColor(ticket.priority)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {ticket.assignedAgent ? (
-                      <Typography>
-                        {typeof ticket.assignedAgent === "string"
-                          ? ticket.assignedAgent
-                          : ticket.assignedAgent.name}
-                      </Typography>
-                    ) : (
-                      <Typography sx={{ color: "red" }}>
-                        Not Assigned Yet
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={ticket.status}
-                      color={getStatusColor(ticket.status)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {new Date(ticket.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={1}>
-                      <Tooltip title="View Ticket">
-                        <IconButton
-                          size="small"
-                          onClick={() => navigate(`/tickets/${ticket._id}`)}
-                          color="primary"
-                        >
-                          <Visibility />
-                        </IconButton>
-                      </Tooltip>
-                      {isCustomer && (
-                        <Tooltip title="Add Comment">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEdit(ticket)}
-                            color="secondary"
-                          >
-                            <Comment />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <DataTable
+        columns={ticketColumns}
+        data={tickets}
+        isLoading={isLoading}
+        emptyMessage="No tickets found"
+        getRowKey={(ticket) => ticket._id}
+        colSpan={8}
+      />
 
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle sx={{ pb: 0 }}>
@@ -736,8 +718,8 @@ const Dashboard: React.FC = () => {
                 ? "Updating Comment..."
                 : "Creating..."
               : isEditMode
-              ? "Update Comment"
-              : "Create Ticket"}
+                ? "Update Comment"
+                : "Create Ticket"}
           </Button>
         </DialogActions>
       </Dialog>

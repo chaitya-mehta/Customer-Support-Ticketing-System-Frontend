@@ -60,8 +60,10 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
-export enum ROLES {
-  ADMIN = "admin",
-  AGENT = "agent",
-  CUSTOMER = "customer",
-}
+export const ROLES = {
+  ADMIN: "admin",
+  AGENT: "agent",
+  CUSTOMER: "customer",
+} as const;
+
+export type Role = typeof ROLES[keyof typeof ROLES];

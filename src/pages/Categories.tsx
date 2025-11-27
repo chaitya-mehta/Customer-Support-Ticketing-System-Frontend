@@ -1,8 +1,8 @@
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  ToggleOff as ToggleOffIcon,
-  ToggleOn as ToggleOnIcon,
+  ToggleOff,
+  ToggleOn,
 } from "@mui/icons-material";
 import {
   Alert,
@@ -18,15 +18,8 @@ import {
   IconButton,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
@@ -46,6 +39,8 @@ import {
 } from "../store/slices/categorySlice";
 import { useDebounce } from "../utils/useDebounce";
 import Pagination from "./Pagination";
+import { DataTable, type Column } from "../components/DataTable";
+import type { Category } from "../types";
 
 const Categories: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -205,6 +200,75 @@ const Categories: React.FC = () => {
     return false;
   };
 
+  const categoryColumns: Column<Category>[] = [
+    {
+      id: "name",
+      label: "Name",
+      width: 300,
+      render: (category) => (
+        <Typography variant="body1" fontWeight="medium">
+          {category.name}
+        </Typography>
+      ),
+    },
+    {
+      id: "status",
+      label: "Status",
+      width: 200,
+      render: (category) => (
+        <Chip
+          label={category.isActive ? "Active" : "Inactive"}
+          color={category.isActive ? "success" : "error"}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: "createdAt",
+      label: "Created",
+      width: 250,
+      render: (category) => new Date(category.createdAt).toLocaleDateString(),
+    },
+    {
+      id: "actions",
+      label: "Actions",
+      width: 250,
+      render: (category) => (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Tooltip
+            title={
+              !category.isActive
+                ? "Cannot edit inactive category"
+                : "Edit category name"
+            }
+          >
+            <span>
+              <IconButton
+                size="small"
+                onClick={() => handleOpenEditModal(category)}
+                disabled={!category.isActive || isLoading}
+                color="primary"
+              >
+                <EditIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Button
+            size="small"
+            onClick={() => handleToggleStatus(category._id, category.isActive)}
+            disabled={isLoading}
+            color={category.isActive ? "warning" : "success"}
+          >
+            {category.isActive ? (
+              <ToggleOn sx={{ fontSize: 32, color: "success.main" }} />
+            ) : (
+              <ToggleOff sx={{ fontSize: 32, color: "text.disabled" }} />
+            )}
+          </Button>
+        </Stack>
+      ),
+    },
+  ];
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box
@@ -270,109 +334,14 @@ const Categories: React.FC = () => {
           </Select>
         </FormControl>
       </Box>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
-            <TableRow>
-              <TableCell width={300} sx={{ fontWeight: "bold" }}>
-                Name
-              </TableCell>
-              <TableCell width={200} sx={{ fontWeight: "bold" }}>
-                Status
-              </TableCell>
-              <TableCell width={250} sx={{ fontWeight: "bold" }}>
-                Created
-              </TableCell>
-              <TableCell width={250} sx={{ fontWeight: "bold" }}>
-                Actions
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={4}
-                  sx={{ textAlign: "center", py: 4, height: 100 }}
-                >
-                  <CircularProgress />
-                </TableCell>
-              </TableRow>
-            ) : categories.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={4}
-                  sx={{ textAlign: "center", py: 4, fontWeight: "bold" }}
-                >
-                  No categories found
-                </TableCell>
-              </TableRow>
-            ) : (
-              categories.map((category: any) => (
-                <TableRow key={category._id} hover>
-                  <TableCell>
-                    <Typography variant="body1" fontWeight="medium">
-                      {category.name}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={category.isActive ? "Active" : "Inactive"}
-                      color={category.isActive ? "success" : "error"}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {new Date(category.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Tooltip
-                        title={
-                          !category.isActive
-                            ? "Cannot edit inactive category"
-                            : "Edit category name"
-                        }
-                      >
-                        <span>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleOpenEditModal(category)}
-                            disabled={!category.isActive || isLoading}
-                            color="primary"
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                      <Button
-                        size="small"
-                        onClick={() =>
-                          handleToggleStatus(category._id, category.isActive)
-                        }
-                        disabled={isLoading}
-                        color={category.isActive ? "warning" : "success"}
-                      >
-                        {category.isActive ? (
-                          <ToggleOnIcon
-                            sx={{ fontSize: 32, color: "success.main" }}
-                          />
-                        ) : (
-                          <ToggleOffIcon
-                            sx={{ fontSize: 32, color: "text.disabled" }}
-                          />
-                        )}
-                      </Button>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
+      <DataTable
+        columns={categoryColumns}
+        data={categories}
+        isLoading={isLoading}
+        emptyMessage="No categories found"
+        getRowKey={(category) => category._id}
+        colSpan={4}
+      />
       <Pagination
         currentPage={page}
         totalPages={totalPages}

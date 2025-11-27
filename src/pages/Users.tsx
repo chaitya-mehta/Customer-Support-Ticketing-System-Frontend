@@ -1,27 +1,19 @@
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  ToggleOff as ToggleOffIcon,
-  ToggleOn as ToggleOnIcon,
+  ToggleOff,
+  ToggleOn,
 } from "@mui/icons-material";
 import {
   Alert,
   Box,
   Chip,
-  CircularProgress,
   Container,
   FormControl,
   IconButton,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
@@ -37,7 +29,8 @@ import {
 import { useDebounce } from "../utils/useDebounce";
 import AddEditUserDialog from "./AddEditUserDialog";
 import Pagination from "./Pagination";
-import { ROLES } from "../types";
+import { ROLES, type User } from "../types";
+import DataTable, { type Column } from "../components/DataTable";
 
 const Users: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -148,9 +141,90 @@ const Users: React.FC = () => {
     }
   };
 
-  const getStatusColor = (isActive: boolean) => {
-    return isActive ? "success" : "default";
-  };
+  const userColumns: Column<User>[] = [
+    {
+      id: "name",
+      label: "Name",
+      width: 200,
+      render: (user) => <Typography variant="body2">{user.name}</Typography>,
+    },
+    {
+      id: "email",
+      label: "Email",
+      width: 300,
+      render: (user) => <Typography variant="body2">{user.email}</Typography>,
+    },
+    {
+      id: "role",
+      label: "Role",
+      width: 250,
+      render: (user) => (
+        <Chip
+          label={user.role.toUpperCase()}
+          color={getRoleColor(user.role)}
+          size="small"
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      id: "status",
+      label: "Status",
+      width: 200,
+      render: (user) => (
+        <Chip
+          label={user.isActive ? "Active" : "Inactive"}
+          color={user.isActive ? "success" : "default"}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: "createdAt",
+      label: "Created",
+      width: 200,
+      render: (user) => (
+        <Typography variant="body2">
+          {new Date(user.createdAt).toLocaleDateString()}
+        </Typography>
+      ),
+    },
+    {
+      id: "actions",
+      label: "Actions",
+      width: 150,
+      render: (user: User) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Tooltip title="Edit user">
+            <IconButton
+              size="small"
+              onClick={() => handleEditClick(user)}
+              disabled={isLoading}
+              color="primary"
+            >
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={user.isActive ? "Deactivate user" : "Activate user"}>
+            <span>
+              <IconButton
+                size="small"
+                onClick={() => handleToggleStatus(user._id, user.isActive)}
+                disabled={isLoading || user._id === currentUser?._id}
+                color={user.isActive ? "success" : "default"}
+              >
+                {user.isActive ? (
+                  <ToggleOn sx={{ fontSize: 32, color: "success.main" }} />
+                ) : (
+                  <ToggleOff sx={{ fontSize: 32, color: "text.disabled" }} />
+                )}
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
+      ),
+    },
+  ];
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -230,133 +304,14 @@ const Users: React.FC = () => {
           </Select>
         </FormControl>
       </Box>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
-            <TableRow>
-              <TableCell width={200} sx={{ fontWeight: "bold" }}>
-                Name
-              </TableCell>
-              <TableCell width={300} sx={{ fontWeight: "bold" }}>
-                Email
-              </TableCell>
-              <TableCell width={250} sx={{ fontWeight: "bold" }}>
-                Role
-              </TableCell>
-              <TableCell width={200} sx={{ fontWeight: "bold" }}>
-                Status
-              </TableCell>
-              <TableCell width={200} sx={{ fontWeight: "bold" }}>
-                Created
-              </TableCell>
-              <TableCell width={150} sx={{ fontWeight: "bold" }}>
-                Actions
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: "center", py: 4 }}>
-                  <CircularProgress />
-                </TableCell>
-              </TableRow>
-            ) : users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: "center", py: 4 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    No users found
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              users.map((user: any) => (
-                <TableRow key={user._id} hover>
-                  <TableCell>
-                    <Typography variant="body2">{user.name}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{user.email}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={user.role.toUpperCase()}
-                      color={getRoleColor(user.role)}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={user.isActive ? "Active" : "Inactive"}
-                      color={getStatusColor(user.isActive)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Tooltip title="Edit user">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEditClick(user)}
-                          disabled={isLoading}
-                          color="primary"
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-
-                      <Tooltip
-                        title={
-                          user.isActive ? "Deactivate user" : "Activate user"
-                        }
-                      >
-                        <span>
-                          <IconButton
-                            size="small"
-                            onClick={() =>
-                              handleToggleStatus(user._id, user.isActive)
-                            }
-                            disabled={
-                              isLoading || user._id === currentUser?._id
-                            }
-                            color={user.isActive ? "success" : "default"}
-                          >
-                            {user.isActive ? (
-                              <ToggleOnIcon
-                                sx={{ fontSize: 32, color: "success.main" }}
-                              />
-                            ) : (
-                              <ToggleOffIcon
-                                sx={{ fontSize: 32, color: "text.disabled" }}
-                              />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    </Box>
-
-                    {user._id === currentUser?._id && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                      >
-                        Cannot deactivate yourself
-                      </Typography>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <DataTable
+        columns={userColumns}
+        data={users}
+        isLoading={isLoading}
+        emptyMessage="No users found"
+        getRowKey={(user) => user._id}
+        colSpan={6}
+      />
       <Pagination
         currentPage={page}
         totalPages={totalPages}
